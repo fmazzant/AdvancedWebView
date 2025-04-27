@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs
+/src/.vs/AdvancedWebView
+/src/AdvancedWebView/bin/Debug
+/src/AdvancedWebView/obj
