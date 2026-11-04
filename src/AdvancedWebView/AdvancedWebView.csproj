@@ -17,7 +17,7 @@
   <!-- NuGet package metadata -->
   <PropertyGroup>
     <PackageId>Mafesoft.Maui.AdvancedWebView</PackageId>
-    <Version>1.0.0-rc1</Version>
+    <Version>1.0.0</Version>
     <Authors>Federico Mazzanti</Authors>
     <Copyright>Copyright (c) 2025 Federico Mazzanti</Copyright>
     <Description>AdvancedWebView is a lightweight WebView for .NET MAUI (Android and iOS) that exposes extra platform settings such as JavaScript, popup windows, scroll bounce, mixed content, file access, cache mode and cache clearing.</Description>
