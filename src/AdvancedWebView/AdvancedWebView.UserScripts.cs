@@ -27,6 +27,10 @@ namespace Mafesoft.Maui.Controls
         {
             var result = new List<ResolvedUserScript>();
 
+            // Display options (TextSelectionEnabled, iOS ZoomEnabled), only when they change something.
+            if (!TextSelectionEnabled || (OperatingSystem.IsIOS() && !ZoomEnabled))
+                result.Add(new ResolvedUserScript(DisplayScript(), UserScriptInjectionTime.DocumentStart, MainFrameOnly: true));
+
             var styles = UserScriptCode.StyleSheets(UserStyleSheets);
             if (styles.Length > 0)
                 result.Add(new ResolvedUserScript(styles, UserScriptInjectionTime.DocumentStart, MainFrameOnly: true));

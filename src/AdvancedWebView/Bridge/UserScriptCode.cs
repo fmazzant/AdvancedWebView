@@ -30,6 +30,39 @@ namespace Mafesoft.Maui.Controls
             return "if (" + string.Join(" && ", conditions) + ") {\n" + source + "\n}";
         }
 
+        /// <summary>Id of the style element of <see cref="Display"/>.</summary>
+        public const string DisplayStyleId = "__advancedwebview-display";
+
+        /// <summary>
+        /// A script for the display options: a style element (always the same one, so running it again replaces it)
+        /// that turns off text selection, and the viewport's <c>user-scalable=no</c> to turn off pinch zoom.
+        /// With text selection on and zoom allowed it empties the style element, so it can also undo a previous run.
+        /// </summary>
+        public static string Display(bool textSelection, bool disableZoom)
+        {
+            var css = textSelection
+                ? string.Empty
+                : "* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }\n" +
+                  "input, textarea, select, [contenteditable], [contenteditable] * { -webkit-user-select: text !important; user-select: text !important; }";
+
+            return "(function () {\n" +
+                   "  var css = " + BridgeProtocol.JsonString(css) + ";\n" +
+                   "  var noZoom = " + (disableZoom ? "true" : "false") + ";\n" +
+                   "  function style() {\n" +
+                   "    var s = document.getElementById(\"" + DisplayStyleId + "\");\n" +
+                   "    if (!s) { s = document.createElement(\"style\"); s.id = \"" + DisplayStyleId + "\"; (document.head || document.documentElement).appendChild(s); }\n" +
+                   "    s.textContent = css;\n" +
+                   "  }\n" +
+                   "  function viewport() {\n" +
+                   "    var m = document.querySelector(\"meta[name=viewport]\");\n" +
+                   "    if (!m) { m = document.createElement(\"meta\"); m.name = \"viewport\"; m.content = \"width=device-width, initial-scale=1\"; document.head.appendChild(m); }\n" +
+                   "    if (!/user-scalable/i.test(m.content)) { m.content += \", maximum-scale=1, user-scalable=no\"; }\n" +
+                   "  }\n" +
+                   "  if (document.documentElement) { style(); } else { document.addEventListener(\"DOMContentLoaded\", style); }\n" +
+                   "  if (noZoom) { if (document.head) { viewport(); } else { document.addEventListener(\"DOMContentLoaded\", viewport); } }\n" +
+                   "})();";
+        }
+
         /// <summary>A script that adds the style sheets to the page as <c>&lt;style data-advancedwebview&gt;</c> elements.</summary>
         public static string StyleSheets(IEnumerable<string> css)
         {

@@ -17,6 +17,8 @@ public partial class MainPage : ContentPage
 		CacheModePicker.SelectedIndex = (int)WebView.CacheMode;
 		NewWindowPicker.ItemsSource = Enum.GetNames<NewWindowAction>();
 		NewWindowPicker.SelectedIndex = (int)WebView.NewWindowBehavior;
+		ColorSchemePicker.ItemsSource = Enum.GetNames<WebViewColorScheme>();
+		ColorSchemePicker.SelectedIndex = (int)WebView.PreferredColorScheme;
 		DownloadPicker.ItemsSource = Enum.GetNames<DownloadBehavior>();
 		DownloadPicker.SelectedIndex = (int)WebView.DownloadBehavior;
 		PermissionPicker.ItemsSource = Enum.GetNames<PermissionDecision>();
@@ -181,8 +183,17 @@ public partial class MainPage : ContentPage
 		Log($"Navigating: {e.Url}");
 	}
 
+	void OnPullToRefresh(object? sender, EventArgs e) => WebView.Reload();
+
+	void OnColorSchemeChanged(object? sender, EventArgs e)
+	{
+		if (ColorSchemePicker.SelectedIndex >= 0)
+			WebView.PreferredColorScheme = (WebViewColorScheme)ColorSchemePicker.SelectedIndex;
+	}
+
 	void OnNavigated(object? sender, WebNavigatedEventArgs e)
 	{
+		Refresh.IsRefreshing = false; // the reload started by pull to refresh is done
 		if (e.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
 			UrlEntry.Text = e.Url;
 

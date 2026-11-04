@@ -68,6 +68,28 @@ WebView.ClearCache();
 | `FullscreenEnabled` | `true` | ✔ | ✔ | Fullscreen video and `element.requestFullscreen`. See [Fullscreen](#fullscreen) |
 | `PermissionRequestBehavior` | `AskUser` | ✔ | ✔ | Camera, microphone and location asked by the page: `AskUser`, `Grant`, `Deny`. See [Permissions](#permissions) |
 | `DownloadBehavior` | `Event` | ✔ | ✔ | `Event`, `SystemDownloadManager` (Android), `Ignore`. See [Downloads](#downloads) |
+| `ZoomEnabled` | `true` | ✔ | ✔ | Pinch zoom. Android: built-in zoom without the +/- buttons. iOS: `user-scalable=no` when off |
+| `TextZoom` | `100` | ✔ | ✔ | Text size in percent (10–500). iOS scales the whole page (`pageZoom`, iOS 14 or later) |
+| `IsTransparent` | `false` | ✔ | ✔ | The app shows through where the page has no background |
+| `TextSelectionEnabled` | `true` | ✔ | ✔ | Off: no text selection (form fields stay editable); iOS also loses the long-press menu |
+| `LinkPreviewEnabled` | `true` | | ✔ | Link preview on long press |
+| `PreferredColorScheme` | `Auto` | | ✔ | `prefers-color-scheme`: `Auto`, `Light`, `Dark`. Android follows the app's theme |
+| `AlgorithmicDarkening` | `false` | ✔ | | Darkens pages without a dark theme while the app's theme is dark |
+
+### Pull to refresh
+
+Wrap the web view in a MAUI `RefreshView`. MAUI starts the refresh only when the page is scrolled to the top:
+
+```xml
+<RefreshView x:Name="Refresh" Refreshing="OnRefreshing">
+    <awv:AdvancedWebView x:Name="WebView" Navigated="OnNavigated" />
+</RefreshView>
+```
+
+```csharp
+void OnRefreshing(object sender, EventArgs e) => WebView.Reload();
+void OnNavigated(object sender, WebNavigatedEventArgs e) => Refresh.IsRefreshing = false;
+```
 
 ### File upload
 
@@ -414,7 +436,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

@@ -20,6 +20,13 @@ namespace Mafesoft.Maui.Controls.Handlers
                 [nameof(AdvancedWebView.AllowFileAccess)] = MapAllowFileAccess,
                 [nameof(AdvancedWebView.CacheMode)] = MapCacheMode,
                 [nameof(AdvancedWebView.IsInspectable)] = MapIsInspectable,
+                [nameof(AdvancedWebView.ZoomEnabled)] = MapZoomEnabled,
+                [nameof(AdvancedWebView.TextZoom)] = MapTextZoom,
+                [nameof(AdvancedWebView.IsTransparent)] = MapIsTransparent,
+                [nameof(AdvancedWebView.PreferredColorScheme)] = MapPreferredColorScheme,
+                [nameof(AdvancedWebView.AlgorithmicDarkening)] = MapAlgorithmicDarkening,
+                [nameof(AdvancedWebView.TextSelectionEnabled)] = MapDisplayScript,
+                [nameof(AdvancedWebView.LinkPreviewEnabled)] = MapLinkPreviewEnabled,
 #if ANDROID
                 // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
                 [nameof(Android.Webkit.WebViewClient)] = MapAdvancedWebViewClient,
@@ -50,6 +57,14 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         /// <summary>Runs a script in the page without waiting for its result. Must be called on the main thread.</summary>
         internal partial void ExecuteScript(string script);
+
+        // Display options applied by script (TextSelectionEnabled, iOS ZoomEnabled): on every page load through the
+        // user scripts, and right away on the current page.
+        static void MapDisplayScript(AdvancedWebViewHandler handler, AdvancedWebView view)
+        {
+            handler.UpdateUserScripts();
+            handler.ExecuteScript(view.DisplayScript());
+        }
 
         /// <summary>Loads a request from LoadUrl/PostUrlAsync. Must be called on the main thread.</summary>
         internal partial void LoadRequest(WebRequest request);
