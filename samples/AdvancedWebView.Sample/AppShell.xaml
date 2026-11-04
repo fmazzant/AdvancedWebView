@@ -6,9 +6,15 @@
     xmlns:local="clr-namespace:AdvancedWebViewSample"
     Title="AdvancedWebView">
 
-    <ShellContent
-        Title="AdvancedWebView"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <ShellContent
+            Title="Browser"
+            ContentTemplate="{DataTemplate local:MainPage}"
+            Route="MainPage" />
+        <ShellContent
+            Title="Bridge"
+            ContentTemplate="{DataTemplate local:BridgePage}"
+            Route="BridgePage" />
+    </TabBar>
 
 </Shell>

@@ -26,6 +26,8 @@ namespace Mafesoft.Maui.Controls.Handlers
                     : WKAudiovisualMediaTypes.None;
             }
 
+            SetUpBridge(config);
+
             return new MauiWKWebView(CGRect.Empty, this, config);
         }
 

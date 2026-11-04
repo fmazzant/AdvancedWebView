@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bridge demo</title>
+  <style>
+    body { font-family: -apple-system, Roboto, sans-serif; padding: 16px; line-height: 1.5; }
+    button { display: block; width: 100%; margin: 6px 0; padding: 10px; font-size: 15px; }
+    #log { font-family: monospace; font-size: 13px; white-space: pre-wrap; background: #f2f2f2; padding: 8px; border-radius: 6px; min-height: 4em; }
+  </style>
+</head>
+<body>
+  <h2>Bridge demo (page side)</h2>
+
+  <button id="post">postMessage({ type: "checkout", total: 42.5 })</button>
+  <button id="time">await invoke("getTime")</button>
+  <button id="divide">await invoke("divide", { a: 10, b: 4 })</button>
+  <button id="divideZero">await invoke("divide", { a: 1, b: 0 }) → error code</button>
+  <button id="missing">await invoke("missing") → MethodNotFound</button>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+
+  <script>
+    function log(text) {
+      var el = document.getElementById("log");
+      el.textContent = new Date().toLocaleTimeString() + "  " + text + "\n" + el.textContent;
+    }
+
+    // Functions the app calls with InvokeJavaScriptAsync.
+    window.demo = {
+      add: function (a, b) { return a + b; },
+      greetLater: function (name) {
+        return new Promise(function (resolve) { setTimeout(function () { resolve("Hello " + name + ", from a Promise"); }, 500); });
+      },
+      fail: function () { throw new Error("demo.fail() always throws"); }
+    };
+
+    function call(method, args) {
+      AdvancedWebView.invoke(method, args).then(
+        function (result) { log(method + " → " + JSON.stringify(result)); },
+        function (error) { log(method + " ✗ " + error.code + ": " + error.message); });
+    }
+
+    AdvancedWebView.ready.then(function () {
+      log("bridge ready");
+
+      AdvancedWebView.addEventListener("message", function (e) { log("from app: " + JSON.stringify(e.data)); });
+
+      document.getElementById("post").onclick = function () {
+        AdvancedWebView.postMessage({ type: "checkout", total: 42.5 });
+        log("posted checkout");
+      };
+      document.getElementById("time").onclick = function () { call("getTime"); };
+      document.getElementById("divide").onclick = function () { call("divide", { a: 10, b: 4 }); };
+      document.getElementById("divideZero").onclick = function () { call("divide", { a: 1, b: 0 }); };
+      document.getElementById("missing").onclick = function () { call("missing"); };
+    });
+  </script>
+</body>
+</html>

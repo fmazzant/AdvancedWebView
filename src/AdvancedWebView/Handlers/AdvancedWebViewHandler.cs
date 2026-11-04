@@ -38,5 +38,18 @@ namespace Mafesoft.Maui.Controls.Handlers
             : base(mapper ?? Mapper, commandMapper ?? CommandMapper)
         {
         }
+
+        /// <summary>Runs a script in the page without waiting for its result. Must be called on the main thread.</summary>
+        internal partial void ExecuteScript(string script);
+
+        /// <summary>Called after each page load (Navigated). Android uses it when document-start scripts are not supported.</summary>
+        internal void OnPageLoaded() => OnPageLoadedCore();
+
+        partial void OnPageLoadedCore();
+
+        /// <summary>Re-applies <see cref="AdvancedWebView.UserScripts"/> and <see cref="AdvancedWebView.UserStyleSheets"/>.</summary>
+        internal partial void UpdateUserScripts();
+
+        AdvancedWebView? Advanced => VirtualView as AdvancedWebView;
     }
 }

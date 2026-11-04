@@ -17,16 +17,17 @@
   <!-- NuGet package metadata -->
   <PropertyGroup>
     <PackageId>Mafesoft.Maui.AdvancedWebView</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Federico Mazzanti</Authors>
     <Copyright>Copyright (c) 2025 Federico Mazzanti</Copyright>
-    <Description>AdvancedWebView is a lightweight WebView for .NET MAUI (Android and iOS) that exposes extra platform settings such as JavaScript, popup windows, scroll bounce, mixed content, file access, cache mode and cache clearing.</Description>
-    <PackageTags>maui;dotnet-maui;webview;android;ios;controls</PackageTags>
+    <Description>AdvancedWebView is a WebView for .NET MAUI (Android and iOS) with a JavaScript bridge that works with any site: two-way messages, C# handlers the page awaits as Promises, typed calls to page functions, injected scripts and styles, and per-origin security. It also exposes platform settings such as JavaScript, popups, scroll bounce, mixed content, file access and cache control.</Description>
+    <PackageTags>maui;dotnet-maui;webview;javascript;bridge;postmessage;hybrid;android;ios;controls</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fmazzant/AdvancedWebView</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fmazzant/AdvancedWebView.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/fmazzant/AdvancedWebView/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
@@ -40,6 +41,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.120" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <!-- WebViewCompat.addWebMessageListener / addDocumentStartJavaScript for the JS bridge -->
+    <PackageReference Include="Xamarin.AndroidX.WebKit" Version="1.14.0.1" />
   </ItemGroup>
 
 </Project>
