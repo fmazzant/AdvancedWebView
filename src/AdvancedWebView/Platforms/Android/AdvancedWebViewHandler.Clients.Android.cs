@@ -1,4 +1,6 @@
 using Android.Graphics;
+using Android.OS;
+using Android.Webkit;
 using Microsoft.Maui.Platform;
 using AWebView = Android.Webkit.WebView;
 
@@ -15,8 +17,23 @@ namespace Mafesoft.Maui.Controls.Handlers
         static void MapAdvancedWebViewClient(AdvancedWebViewHandler handler, AdvancedWebView view) =>
             handler.PlatformView.SetWebViewClient(handler.webViewClient ??= new AdvancedWebViewClient(handler));
 
-        static void MapAdvancedWebChromeClient(AdvancedWebViewHandler handler, AdvancedWebView view) =>
+        static void MapAdvancedWebChromeClient(AdvancedWebViewHandler handler, AdvancedWebView view)
+        {
+            // Without multiple windows, Android loads target="_blank" and window.open in this view without telling us.
+            handler.PlatformView.Settings.SetSupportMultipleWindows(true);
             handler.PlatformView.SetWebChromeClient(handler.webChromeClient ??= new AdvancedWebChromeClient(handler));
+        }
+
+        void OpenNewWindow(string url, bool isUserGesture)
+        {
+            if (PlatformView is not { } webView || Advanced is not { } view || !view.OnNewWindowRequested(url, isUserGesture))
+                return;
+
+            // LoadUrl does not go through ShouldOverrideUrlLoading, where MAUI raises Navigating: raise it here,
+            // so apps can still block the URL.
+            if (!((IWebView)view).Navigating(WebNavigationEvent.NewPage, url))
+                webView.LoadUrl(url);
+        }
 
         // MAUI's DisconnectHandler disconnects and detaches the clients; they cannot be reused afterwards.
         void ForgetClients()
@@ -80,6 +97,53 @@ namespace Mafesoft.Maui.Controls.Handlers
             {
                 base.OnReceivedTitle(view, title);
                 View?.SetTitle(title);
+            }
+
+            // target="_blank" and window.open. The URL is not passed here: hand the page a hidden web view and catch
+            // the first URL it tries to load.
+            public override bool OnCreateWindow(AWebView? view, bool isDialog, bool isUserGesture, Message? resultMsg)
+            {
+                if (view?.Context is not { } context || resultMsg?.Obj is not AWebView.WebViewTransport transport ||
+                    !handler.TryGetTarget(out var owner))
+                    return false;
+
+                var popup = new AWebView(context);
+                popup.SetWebViewClient(new PopupUrlCatcher(url => owner.OpenNewWindow(url, isUserGesture)));
+                transport.WebView = popup;
+                resultMsg.SendToTarget();
+                return true;
+            }
+        }
+
+        /// <summary>WebViewClient of the hidden popup web view: reports its first real URL, then destroys it.</summary>
+        sealed class PopupUrlCatcher : WebViewClient
+        {
+            Action<string>? onUrl;
+
+            public PopupUrlCatcher(Action<string> onUrl) => this.onUrl = onUrl;
+
+            public override bool ShouldOverrideUrlLoading(AWebView? view, IWebResourceRequest? request)
+            {
+                Catch(view, request?.Url?.ToString());
+                return true;
+            }
+
+            public override void OnPageStarted(AWebView? view, string? url, Bitmap? favicon)
+            {
+                base.OnPageStarted(view, url, favicon);
+                Catch(view, url);
+            }
+
+            void Catch(AWebView? view, string? url)
+            {
+                // window.open() starts with about:blank; window.open() without a URL never gets further.
+                if (onUrl is not { } callback || !AdvancedWebView.IsNewWindowUrl(url))
+                    return;
+
+                onUrl = null;
+                view?.StopLoading();
+                view?.Post(view.Destroy);
+                callback(url!);
             }
         }
     }

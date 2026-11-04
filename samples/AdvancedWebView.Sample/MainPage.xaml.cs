@@ -15,7 +15,19 @@ public partial class MainPage : ContentPage
 
 		CacheModePicker.ItemsSource = Enum.GetNames<WebViewCacheMode>();
 		CacheModePicker.SelectedIndex = (int)WebView.CacheMode;
+		NewWindowPicker.ItemsSource = Enum.GetNames<NewWindowAction>();
+		NewWindowPicker.SelectedIndex = (int)WebView.NewWindowBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+	}
+
+	// target="_blank" and window.open. e.Action starts as NewWindowBehavior (picker); change it here to decide per URL.
+	void OnNewWindowRequested(object? sender, NewWindowRequestedEventArgs e) =>
+		Log($"New window ({e.Action}, gesture: {e.IsUserGesture}): {e.Url}");
+
+	void OnNewWindowBehaviorChanged(object? sender, EventArgs e)
+	{
+		if (NewWindowPicker.SelectedIndex >= 0)
+			WebView.NewWindowBehavior = (NewWindowAction)NewWindowPicker.SelectedIndex;
 	}
 
 	void OnNavigating(object? sender, WebNavigatingEventArgs e)

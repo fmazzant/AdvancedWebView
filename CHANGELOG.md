@@ -12,10 +12,11 @@ The navigation release.
 ### Added
 
 - **Page state as bindable properties:** `Progress` (0 to 1), `IsLoading`, `Title` and `CurrentUrl`, read-only. `Title` and `CurrentUrl` also follow `document.title` changes and `history.pushState`.
+- **New windows:** `NewWindowBehavior` (`OpenInSameView`, `OpenInBrowser`, `Cancel`) and the `NewWindowRequested` event (`Url`, `IsUserGesture`, `Action`) for links with `target="_blank"` and `window.open`. Before, Android loaded them in the same view and iOS ignored `window.open`.
 
 ### Changed
 
-- Android: the web view now uses subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`. MAUI behaviour (navigation events, alerts, file pickers, fullscreen video) is unchanged.
+- The web view now uses subclasses of MAUI's platform delegates: `MauiWebViewClient` and `MauiWebChromeClient` on Android, `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate` on iOS. MAUI behaviour (navigation events, alerts, file pickers, fullscreen video) is unchanged.
 
 ### Fixed
 

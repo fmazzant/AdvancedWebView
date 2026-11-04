@@ -28,7 +28,11 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             SetUpBridge(config);
 
-            return new MauiWKWebView(CGRect.Empty, this, config);
+            var webView = new MauiWKWebView(CGRect.Empty, this, config);
+
+            // Replace the delegate MauiWKWebView creates with our subclass, which handles target="_blank" links.
+            webView.NavigationDelegate = new AdvancedNavigationDelegate(this);
+            return webView;
         }
 
         // Applied in CreatePlatformView: WebKit does not pick up configuration changes after creation.

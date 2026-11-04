@@ -23,6 +23,9 @@ namespace Mafesoft.Maui.Controls.Handlers
                 // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
                 [nameof(Android.Webkit.WebViewClient)] = MapAdvancedWebViewClient,
                 [nameof(Android.Webkit.WebChromeClient)] = MapAdvancedWebChromeClient,
+#elif IOS
+                // Same key as the MAUI mapper: our subclass of MauiWebViewUIDelegate replaces MAUI's.
+                [nameof(WebKit.WKUIDelegate)] = MapAdvancedUIDelegate,
 #endif
             };
 
