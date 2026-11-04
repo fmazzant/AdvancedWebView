@@ -20,8 +20,34 @@
   <button id="btnAlert">alert()</button>
   <button id="btnConfirm">confirm()</button>
   <p id="confirmResult"></p>
+  <p><a href="https://learn.microsoft.com/dotnet/maui/" target="_blank">Link with target="_blank"</a></p>
+
+  <h3>Load failures</h3>
+  <p>
+    <a href="https://httpbin.org/status/404">HTTP 404</a> ·
+    <a href="https://httpbin.org/status/500">HTTP 500</a> ·
+    <a href="https://nonexistent.invalid/">unknown host</a> ·
+    <a href="https://expired.badssl.com/">expired certificate</a> ·
+    <a href="https://10.255.255.1/">timeout</a> (slow)
+  </p>
+  <p>For NoInternet, turn on airplane mode and reload.</p>
+
+  <h3>External links</h3>
+  <p>
+    <a href="tel:+390000000000">tel:</a> ·
+    <a href="mailto:test@example.com?subject=AdvancedWebView">mailto:</a> ·
+    <a href="geo:43.7696,11.2558">geo:</a> ·
+    <a href="https://github.com/fmazzant/AdvancedWebView">github.com</a> (outside the app when only microsoft.com stays inside)
+  </p>
+  <p>
+    Android: <a href="intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Fzxing%2Fzxing;end">intent:// with fallback</a>
+    (opens the app if installed, otherwise the fallback page)
+  </p>
   <button id="btnOpen">window.open() on tap</button>
   <button id="btnOpenNoGesture">window.open() without user gesture</button>
+  <button id="btnTitle">Change document.title</button>
+  <button id="btnPushState">history.pushState()</button>
+  <p id="pushResult"></p>
 
   <p>Scroll past the end of the page to test <code>ScrollBouncesEnabled</code>.</p>
   <div class="filler"></div>
@@ -43,6 +69,20 @@
     };
     document.getElementById("btnOpenNoGesture").onclick = function () {
       setTimeout(function () { window.open("https://dotnet.microsoft.com", "_blank"); }, 1500);
+    };
+
+    // Title and CurrentUrl must follow these changes without a page load.
+    var step = 0;
+    document.getElementById("btnTitle").onclick = function () {
+      document.title = "Title changed " + new Date().toLocaleTimeString();
+    };
+    document.getElementById("btnPushState").onclick = function () {
+      try {
+        history.pushState({ step: ++step }, "", "#step-" + step);
+        document.getElementById("pushResult").textContent = "pushState #step-" + step;
+      } catch (e) {
+        document.getElementById("pushResult").textContent = "pushState failed: " + e.message;
+      }
     };
   </script>
 </body>

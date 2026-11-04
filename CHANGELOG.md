@@ -5,6 +5,28 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - Unreleased
+
+The navigation release.
+
+### Added
+
+- **Page state as bindable properties:** `Progress` (0 to 1), `IsLoading`, `Title` and `CurrentUrl`, read-only. `Title` and `CurrentUrl` also follow `document.title` changes and `history.pushState`.
+- **New windows:** `NewWindowBehavior` (`OpenInSameView`, `OpenInBrowser`, `Cancel`) and the `NewWindowRequested` event (`Url`, `IsUserGesture`, `Action`) for links with `target="_blank"` and `window.open`. Before, Android loaded them in the same view and iOS ignored `window.open`.
+- **External links:** `ExternalSchemes` (default `tel`, `mailto`, `sms`, `geo`, `maps`, `whatsapp`, `intent`, `market`, `itms-apps`) are handed to the system instead of showing an error page; `InternalHosts` sends other web sites to the system browser; the `ExternalLinkOpening` event (`Url`, `Reason`, `Cancel`) lets the app handle them. Android `intent://` URLs are supported, with `browser_fallback_url`.
+- **Load failures:** the `NavigationFailed` event (`Url`, `Error`, `HttpStatusCode`, `Description`, `ShowErrorPage`) with a normalized `WebNavigationError` (`NoInternet`, `Timeout`, `HostNotFound`, `SslError`, `HttpError`, `Cancelled`, `Unknown`), for network errors and HTTP 4xx/5xx of the top-level page.
+- **Custom error page:** `ErrorPageHtml` with `{{url}}`, `{{description}}`, `{{error}}` and `{{statusCode}}` placeholders, and `AdvancedWebView.retry()` in the page to load the failed URL again.
+- **Certificate errors:** the `ServerCertificateError` event. Invalid certificates are rejected unless the app sets `Proceed = true`.
+- **Headers and POST:** `LoadUrl(url, headers)` and `PostUrlAsync(url, content, headers)`. Android posts form-urlencoded bodies only, without extra headers.
+
+### Changed
+
+- The web view now uses subclasses of MAUI's platform delegates: `MauiWebViewClient` and `MauiWebChromeClient` on Android, `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate` on iOS. MAUI behaviour (navigation events, alerts, file pickers, fullscreen video) is unchanged.
+
+### Fixed
+
+- CI runs the test project again.
+
 ## [1.1.0] - Unreleased
 
 The JavaScript bridge release: the page and the app can talk to each other, with local HTML and with the remote sites you allow.

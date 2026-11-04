@@ -15,7 +15,85 @@ public partial class MainPage : ContentPage
 
 		CacheModePicker.ItemsSource = Enum.GetNames<WebViewCacheMode>();
 		CacheModePicker.SelectedIndex = (int)WebView.CacheMode;
+		NewWindowPicker.ItemsSource = Enum.GetNames<NewWindowAction>();
+		NewWindowPicker.SelectedIndex = (int)WebView.NewWindowBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+	}
+
+	// target="_blank" and window.open. e.Action starts as NewWindowBehavior (picker); change it here to decide per URL.
+	void OnNewWindowRequested(object? sender, NewWindowRequestedEventArgs e) =>
+		Log($"New window ({e.Action}, gesture: {e.IsUserGesture}): {e.Url}");
+
+	void OnNewWindowBehaviorChanged(object? sender, EventArgs e)
+	{
+		if (NewWindowPicker.SelectedIndex >= 0)
+			WebView.NewWindowBehavior = (NewWindowAction)NewWindowPicker.SelectedIndex;
+	}
+
+	// tel:, mailto:, intent:// ... and, with the switch on, sites outside microsoft.com. Set e.Cancel to handle them yourself.
+	void OnExternalLinkOpening(object? sender, ExternalLinkOpeningEventArgs e) =>
+		Log($"Opening outside the app ({e.Reason}): {e.Url}");
+
+	// Shown instead of the platform's error page when the switch is on. Placeholders are HTML-encoded.
+	const string ErrorPage = """
+		<!DOCTYPE html>
+		<html>
+		<head>
+		  <meta name="viewport" content="width=device-width, initial-scale=1">
+		  <style>
+		    body { font-family: -apple-system, Roboto, sans-serif; padding: 24px; text-align: center; }
+		    button { padding: 12px 24px; font-size: 16px; }
+		    code { word-break: break-all; }
+		  </style>
+		</head>
+		<body>
+		  <h1>Page not available</h1>
+		  <p><b>{{error}}</b> {{statusCode}}</p>
+		  <p>{{description}}</p>
+		  <p><code>{{url}}</code></p>
+		  <button onclick="AdvancedWebView.retry()">Retry</button>
+		</body>
+		</html>
+		""";
+
+	// httpbin.org echoes the request: the page shows the headers and the form the server received.
+	void OnLoadWithHeadersClicked(object? sender, EventArgs e) =>
+		WebView.LoadUrl("https://httpbin.org/headers", new Dictionary<string, string>
+		{
+			["Authorization"] = "Bearer sample-token",
+			["X-Sample"] = "AdvancedWebView",
+		});
+
+	async void OnPostClicked(object? sender, EventArgs e)
+	{
+		try
+		{
+			await WebView.PostUrlAsync("https://httpbin.org/post", new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["user"] = "mario",
+				["note"] = "àèì & =",
+			}));
+		}
+		catch (Exception ex)
+		{
+			Log($"{ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	void OnErrorPageToggled(object? sender, ToggledEventArgs e) =>
+		WebView.ErrorPageHtml = e.Value ? ErrorPage : null;
+
+	void OnNavigationFailed(object? sender, NavigationFailedEventArgs e) =>
+		Log($"Failed ({e.Error}{(e.HttpStatusCode is { } code ? $" {code}" : "")}): {e.Url} - {e.Description}");
+
+	// Rejected (the default): a real app should accept a certificate only for its own development server.
+	void OnServerCertificateError(object? sender, ServerCertificateErrorEventArgs e) =>
+		Log($"Certificate rejected: {e.Url} - {e.Description}");
+
+	void OnInternalHostsToggled(object? sender, ToggledEventArgs e)
+	{
+		WebView.InternalHosts = e.Value ? ["microsoft.com", "*.microsoft.com"] : [];
+		Log(e.Value ? "Only microsoft.com stays inside" : "Every site stays inside");
 	}
 
 	void OnNavigating(object? sender, WebNavigatingEventArgs e)

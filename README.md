@@ -63,14 +63,132 @@ WebView.ClearCache();
 | `AllowMixedContent` | `false` | ✔ | | HTTP resources in HTTPS pages |
 | `AllowFileAccess` | `false` | ✔ | | `file://` and `content://` URLs |
 | `CacheMode` | `Default` | ✔ | | `Default`, `NoCache`, `CacheOnly`, `CacheElseNetwork` |
+| `NewWindowBehavior` | `OpenInSameView` | ✔ | ✔ | `target="_blank"` and `window.open`: `OpenInSameView`, `OpenInBrowser`, `Cancel` |
 
 Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating`, `Navigated`, `EvaluateJavaScriptAsync`, `GoBack`, `GoForward`, `Reload`.
+
+### Page state
+
+Read-only bindable properties, updated by the web view on Android and iOS:
+
+| Property | Type | Description |
+|---|---|---|
+| `Progress` | `double` | Load progress of the current page, from 0 to 1 |
+| `IsLoading` | `bool` | Whether a page is loading |
+| `Title` | `string?` | `document.title`; `null` when the page has none |
+| `CurrentUrl` | `string?` | URL of the current page; also follows `history.pushState`, which does not raise `Navigated` |
+
+```xml
+<ProgressBar Progress="{Binding Progress, Source={x:Reference WebView}}"
+             IsVisible="{Binding IsLoading, Source={x:Reference WebView}}" />
+<Label Text="{Binding Title, Source={x:Reference WebView}}" />
+<Label Text="{Binding CurrentUrl, Source={x:Reference WebView}}" />
+```
+
+### New windows
+
+Links with `target="_blank"` and calls to `window.open(url)` follow `NewWindowBehavior`. Handle `NewWindowRequested` to decide per URL:
+
+```csharp
+webView.NewWindowBehavior = NewWindowAction.OpenInSameView; // default
+
+webView.NewWindowRequested += (s, e) =>
+{
+    // e.Url, e.IsUserGesture
+    if (!e.Url.StartsWith("https://shop.example.com"))
+        e.Action = NewWindowAction.OpenInBrowser; // OpenInSameView, OpenInBrowser, Cancel
+};
+```
+
+- `OpenInSameView` raises `Navigating` as a normal navigation, so URLs you block there stay blocked.
+- `window.open` without a user gesture is blocked by the web view while `JavaScriptCanOpenWindowsAutomatically` is `false` (the default). `window.open()` without a URL is ignored.
+- iOS does not report the user gesture of `window.open`. `IsUserGesture` is `true` for links, and for `window.open` while `JavaScriptCanOpenWindowsAutomatically` is `false`; otherwise `window.open` is reported as `false`.
+- Android: a form with `target="_blank"` and `method="post"` opened in the same view is loaded as a GET, without its body. iOS keeps the POST.
+
+### External links
+
+The web view cannot load `tel:`, `mailto:` and other app links, and shows an error page for them. AdvancedWebView hands them to the system instead. It can also send web sites you do not own to the system browser:
+
+```csharp
+webView.ExternalSchemes = ["tel", "mailto", "sms", "geo", "maps", "whatsapp", "intent", "market", "itms-apps"]; // default
+webView.InternalHosts = ["example.com", "*.example.com"]; // default: empty, every site stays inside
+
+webView.ExternalLinkOpening += (s, e) =>
+{
+    // e.Url, e.Reason (Scheme or Host)
+    e.Cancel = true; // the system does not open it, and the web view does not load it: handle it yourself
+};
+```
+
+- `Navigating` is raised first. A URL cancelled there is not opened outside either.
+- `InternalHosts`: `"example.com"` matches that host only, `"*.example.com"` its subdomains only. Only the top-level page is checked, so iframes from other hosts still load. Links opened as new windows in the same view follow the same rules.
+- Android `intent://` URLs open the app they name, limited to activities that accept browser links (as Chrome does). When no app handles them, the web view loads their `S.browser_fallback_url`.
+- Links leave the app through MAUI `Launcher.OpenAsync`. On iOS a scheme like `whatsapp:` opens only if the app is installed. You do not need `LSApplicationQueriesSchemes` or Android `<queries>` entries for this.
+
+### Load failures and error page
+
+```csharp
+webView.NavigationFailed += (s, e) =>
+{
+    // e.Url, e.Error, e.HttpStatusCode, e.Description
+    if (e.Error == WebNavigationError.HttpError && e.HttpStatusCode == 404)
+        e.ShowErrorPage = false; // keep the server's own 404 page
+};
+
+webView.ErrorPageHtml = """
+    <h1>Page not available</h1>
+    <p>{{description}}</p>
+    <button onclick="AdvancedWebView.retry()">Retry</button>
+    """;
+
+webView.ServerCertificateError += (s, e) => e.Proceed = false; // default: reject
+```
+
+| `WebNavigationError` | Android | iOS (`NSURLErrorDomain`) |
+|---|---|---|
+| `NoInternet` | `net::ERR_INTERNET_DISCONNECTED` | `-1009`, `-1020`, `-1005` |
+| `Timeout` | `ERROR_TIMEOUT` | `-1001` |
+| `HostNotFound` | `ERROR_HOST_LOOKUP`, `ERROR_CONNECT` | `-1003`, `-1004`, `-1006` |
+| `SslError` | `ERROR_FAILED_SSL_HANDSHAKE`, rejected certificate | `-1200` … `-1206` |
+| `HttpError` | HTTP status ≥ 400 | HTTP status ≥ 400 |
+| `Cancelled` | `net::ERR_ABORTED` | `-999`, WebKit `102` |
+| `Unknown` | anything else | anything else |
+
+- Only the top-level page is reported. Failures of iframes and of resources such as images are not.
+- `ErrorPageHtml` placeholders: `{{url}}`, `{{description}}`, `{{error}}`, `{{statusCode}}`. They are HTML-encoded. The page is shown for every error except `Cancelled`. Set `e.ShowErrorPage = false` to keep the current page.
+- `AdvancedWebView.retry()` loads the failed URL again as a normal navigation, so it raises `Navigating`. It needs JavaScript and the bridge. The error page is local content, so it can use the bridge whatever `Bridge.AllowedOrigins` says.
+- Invalid certificates are rejected unless a `ServerCertificateError` handler sets `e.Proceed = true`. Do this only during development, for example for a local server with a self-signed certificate. Accepting every certificate exposes the connection to interception, and Google Play rejects apps that do it.
+
+### Platform delegates
+
+On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows, external links and error handling stop working.
 
 ## Methods
 
 | Method | Description |
 |---|---|
 | `ClearCache()` | Clears the HTTP cache (memory and disk). Cookies and local storage are kept. |
+| `LoadUrl(url, headers)` | Loads a page with extra HTTP headers. |
+| `PostUrlAsync(url, content, headers)` | Loads a page with a POST request. |
+
+### Headers and POST
+
+```csharp
+webView.LoadUrl("https://example.com/account", new Dictionary<string, string>
+{
+    ["Authorization"] = $"Bearer {token}",
+});
+
+await webView.PostUrlAsync("https://example.com/login", new FormUrlEncodedContent(new Dictionary<string, string>
+{
+    ["user"] = "mario",
+}));
+```
+
+- `Navigating` and `Navigated` are raised as for a link, and the external-link rules apply.
+- The headers go with this request only. They are not sent with the page's resources (images, scripts, API calls) or with later navigations, such as links the user taps. For an authenticated session, prefer a cookie (`Cookies`).
+- Android only posts `application/x-www-form-urlencoded` bodies, and cannot add headers to a POST. `PostUrlAsync` throws `NotSupportedException` otherwise. iOS supports any content type and headers.
+- Call these methods after the control is loaded (for example in its `Loaded` event). Before that, they throw `InvalidOperationException`.
 
 ## JavaScript bridge
 
@@ -180,7 +298,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: switches for the properties, cache mode picker, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()` and `window.open()`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

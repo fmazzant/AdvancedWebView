@@ -19,6 +19,14 @@ namespace Mafesoft.Maui.Controls.Handlers
                 [nameof(AdvancedWebView.AllowMixedContent)] = MapAllowMixedContent,
                 [nameof(AdvancedWebView.AllowFileAccess)] = MapAllowFileAccess,
                 [nameof(AdvancedWebView.CacheMode)] = MapCacheMode,
+#if ANDROID
+                // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
+                [nameof(Android.Webkit.WebViewClient)] = MapAdvancedWebViewClient,
+                [nameof(Android.Webkit.WebChromeClient)] = MapAdvancedWebChromeClient,
+#elif IOS
+                // Same key as the MAUI mapper: our subclass of MauiWebViewUIDelegate replaces MAUI's.
+                [nameof(WebKit.WKUIDelegate)] = MapAdvancedUIDelegate,
+#endif
             };
 
         /// <summary>Command mapper: the MAUI WebView commands plus <see cref="AdvancedWebView.ClearCache"/>.</summary>
@@ -41,6 +49,9 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         /// <summary>Runs a script in the page without waiting for its result. Must be called on the main thread.</summary>
         internal partial void ExecuteScript(string script);
+
+        /// <summary>Loads a request from LoadUrl/PostUrlAsync. Must be called on the main thread.</summary>
+        internal partial void LoadRequest(WebRequest request);
 
         /// <summary>Called after each page load (Navigated). Android uses it when document-start scripts are not supported.</summary>
         internal void OnPageLoaded() => OnPageLoadedCore();
