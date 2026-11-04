@@ -5,6 +5,22 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - Unreleased
+
+The navigation release.
+
+### Added
+
+- **Page state as bindable properties:** `Progress` (0 to 1), `IsLoading`, `Title` and `CurrentUrl`, read-only. `Title` and `CurrentUrl` also follow `document.title` changes and `history.pushState`.
+
+### Changed
+
+- Android: the web view now uses subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`. MAUI behaviour (navigation events, alerts, file pickers, fullscreen video) is unchanged.
+
+### Fixed
+
+- CI runs the test project again.
+
 ## [1.1.0] - Unreleased
 
 The JavaScript bridge release: the page and the app can talk to each other, with local HTML and with the remote sites you allow.

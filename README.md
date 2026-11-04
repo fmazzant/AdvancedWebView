@@ -66,6 +66,26 @@ WebView.ClearCache();
 
 Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating`, `Navigated`, `EvaluateJavaScriptAsync`, `GoBack`, `GoForward`, `Reload`.
 
+### Page state
+
+Read-only bindable properties, updated by the web view on Android and iOS:
+
+| Property | Type | Description |
+|---|---|---|
+| `Progress` | `double` | Load progress of the current page, from 0 to 1 |
+| `IsLoading` | `bool` | Whether a page is loading |
+| `Title` | `string?` | `document.title`; `null` when the page has none |
+| `CurrentUrl` | `string?` | URL of the current page; also follows `history.pushState`, which does not raise `Navigated` |
+
+```xml
+<ProgressBar Progress="{Binding Progress, Source={x:Reference WebView}}"
+             IsVisible="{Binding IsLoading, Source={x:Reference WebView}}" />
+<Label Text="{Binding Title, Source={x:Reference WebView}}" />
+<Label Text="{Binding CurrentUrl, Source={x:Reference WebView}}" />
+```
+
+On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`. If your app replaces the web view's `WebViewClient` or `WebChromeClient`, these properties stop updating.
+
 ## Methods
 
 | Method | Description |
@@ -180,7 +200,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: switches for the properties, cache mode picker, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()` and `window.open()`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode picker, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `window.open()`, `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell
