@@ -19,6 +19,11 @@ namespace Mafesoft.Maui.Controls.Handlers
                 [nameof(AdvancedWebView.AllowMixedContent)] = MapAllowMixedContent,
                 [nameof(AdvancedWebView.AllowFileAccess)] = MapAllowFileAccess,
                 [nameof(AdvancedWebView.CacheMode)] = MapCacheMode,
+#if ANDROID
+                // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
+                [nameof(Android.Webkit.WebViewClient)] = MapAdvancedWebViewClient,
+                [nameof(Android.Webkit.WebChromeClient)] = MapAdvancedWebChromeClient,
+#endif
             };
 
         /// <summary>Command mapper: the MAUI WebView commands plus <see cref="AdvancedWebView.ClearCache"/>.</summary>

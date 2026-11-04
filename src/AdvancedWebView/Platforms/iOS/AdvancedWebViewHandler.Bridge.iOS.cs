@@ -19,6 +19,8 @@ namespace Mafesoft.Maui.Controls.Handlers
         /// <inheritdoc/>
         protected override void DisconnectHandler(WKWebView platformView)
         {
+            StopObservingPageState();
+
             // WKUserContentController keeps a strong reference to its handlers: remove ours to avoid a leak.
             var controller = platformView.Configuration.UserContentController;
             controller.RemoveScriptMessageHandler(BridgeScript.IosHandlerName);

@@ -60,6 +60,7 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             Advanced?.BridgeCore.Reset();
             base.DisconnectHandler(platformView);
+            ForgetClients();
         }
 
         internal partial void ExecuteScript(string script) => PlatformView?.EvaluateJavascript(script, null);

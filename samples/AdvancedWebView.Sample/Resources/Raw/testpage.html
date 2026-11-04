@@ -22,6 +22,9 @@
   <p id="confirmResult"></p>
   <button id="btnOpen">window.open() on tap</button>
   <button id="btnOpenNoGesture">window.open() without user gesture</button>
+  <button id="btnTitle">Change document.title</button>
+  <button id="btnPushState">history.pushState()</button>
+  <p id="pushResult"></p>
 
   <p>Scroll past the end of the page to test <code>ScrollBouncesEnabled</code>.</p>
   <div class="filler"></div>
@@ -43,6 +46,20 @@
     };
     document.getElementById("btnOpenNoGesture").onclick = function () {
       setTimeout(function () { window.open("https://dotnet.microsoft.com", "_blank"); }, 1500);
+    };
+
+    // Title and CurrentUrl must follow these changes without a page load.
+    var step = 0;
+    document.getElementById("btnTitle").onclick = function () {
+      document.title = "Title changed " + new Date().toLocaleTimeString();
+    };
+    document.getElementById("btnPushState").onclick = function () {
+      try {
+        history.pushState({ step: ++step }, "", "#step-" + step);
+        document.getElementById("pushResult").textContent = "pushState #step-" + step;
+      } catch (e) {
+        document.getElementById("pushResult").textContent = "pushState failed: " + e.message;
+      }
     };
   </script>
 </body>

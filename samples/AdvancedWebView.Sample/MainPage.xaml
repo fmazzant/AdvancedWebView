@@ -5,7 +5,7 @@
              x:Class="AdvancedWebViewSample.MainPage"
              Title="AdvancedWebView">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
         <!-- Address bar -->
         <Grid Grid.Row="0" Padding="8" ColumnSpacing="4" ColumnDefinitions="Auto,Auto,Auto,*,Auto">
@@ -17,8 +17,18 @@
             <Button Grid.Column="4" Text="Go" Clicked="OnGoClicked" />
         </Grid>
 
+        <!-- Page state: read-only bindable properties of the web view -->
+        <VerticalStackLayout Grid.Row="1" Padding="8,0,8,4" Spacing="2">
+            <Label Text="{Binding Title, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView, TargetNullValue='(no title)'}"
+                   FontAttributes="Bold" LineBreakMode="TailTruncation" />
+            <Label Text="{Binding CurrentUrl, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}"
+                   FontSize="12" LineBreakMode="MiddleTruncation" />
+            <ProgressBar Progress="{Binding Progress, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}"
+                         IsVisible="{Binding IsLoading, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+        </VerticalStackLayout>
+
         <!-- Settings. On iOS, JavaScript and Popups apply only when the native view is created. -->
-        <ScrollView Grid.Row="1" Orientation="Horizontal" Padding="8,0">
+        <ScrollView Grid.Row="2" Orientation="Horizontal" Padding="8,0">
             <HorizontalStackLayout Spacing="12">
                 <HorizontalStackLayout>
                     <Label Text="JavaScript" VerticalOptions="Center" />
@@ -45,14 +55,14 @@
         </ScrollView>
 
         <awv:AdvancedWebView
-            Grid.Row="2"
+            Grid.Row="3"
             x:Name="WebView"
             Source="https://dotnet.microsoft.com"
             Navigating="OnNavigating"
             Navigated="OnNavigated" />
 
         <!-- Event log: last three navigation events -->
-        <Label Grid.Row="3" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
+        <Label Grid.Row="4" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
     </Grid>
 
 </ContentPage>
