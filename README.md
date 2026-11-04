@@ -64,6 +64,7 @@ WebView.ClearCache();
 | `AllowFileAccess` | `false` | ✔ | | `file://` and `content://` URLs |
 | `CacheMode` | `Default` | ✔ | | `Default`, `NoCache`, `CacheOnly`, `CacheElseNetwork` |
 | `NewWindowBehavior` | `OpenInSameView` | ✔ | ✔ | `target="_blank"` and `window.open`: `OpenInSameView`, `OpenInBrowser`, `Cancel` |
+| `IsInspectable` | `false` | ✔ | ✔ | Debug with Chrome DevTools / Safari Web Inspector; iOS 16.4 or later. See [Debugging the page](#debugging-the-page) |
 
 Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating`, `Navigated`, `EvaluateJavaScriptAsync`, `GoBack`, `GoForward`, `Reload`.
 
@@ -294,11 +295,24 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 - Android needs an Android System WebView that supports `WebMessageListener` (any reasonably recent version); otherwise the bridge is disabled and a warning is logged. On WebViews without document-start scripts the bridge is injected when the page finishes loading: page scripts should wait for `AdvancedWebView.ready` or the `advancedwebviewready` event.
 
+## Debugging the page
+
+Enable `IsInspectable`, in debug builds only:
+
+```csharp
+#if DEBUG
+webView.IsInspectable = true;
+#endif
+```
+
+- **Android:** connect the device with USB debugging on (or start the emulator), open `chrome://inspect` in Chrome on your computer, and choose the page under the app's name. The setting is global to the app: debugging stays on for every web view while at least one `AdvancedWebView` with `IsInspectable` is on screen.
+- **iOS 16.4 or later:** on the device, turn on *Settings > Safari > Advanced > Web Inspector*. On the Mac, turn on *Safari > Settings > Advanced > Show features for web developers*, connect the device (or start the simulator), and choose the page in Safari's *Develop* menu. On earlier iOS versions, only debug builds can be inspected, and `IsInspectable` has no effect.
+
 ## Sample app
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

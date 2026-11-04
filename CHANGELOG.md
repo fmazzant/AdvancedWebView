@@ -5,6 +5,14 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - Unreleased
+
+The platform capabilities release.
+
+### Added
+
+- **`IsInspectable`:** debug the page with Chrome DevTools (Android) or the Safari Web Inspector (iOS 16.4 or later).
+
 ## [1.2.0] - Unreleased
 
 The navigation release.

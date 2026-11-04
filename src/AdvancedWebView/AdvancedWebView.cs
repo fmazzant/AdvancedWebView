@@ -122,6 +122,24 @@
             set => SetValue(CacheModeProperty, value);
         }
 
+        /// <summary>Bindable property for <see cref="IsInspectable"/>.</summary>
+        public static readonly BindableProperty IsInspectableProperty =
+            BindableProperty.Create(nameof(IsInspectable), typeof(bool), typeof(AdvancedWebView), false);
+
+        /// <summary>
+        /// Whether the page can be debugged with Chrome DevTools (<c>chrome://inspect</c>, Android) or the Safari
+        /// Web Inspector (Develop menu, iOS 16.4 or later). Defaults to <see langword="false"/>. Enable it in debug builds only.
+        /// </summary>
+        /// <remarks>
+        /// On Android the setting is global to the app: debugging stays enabled for every web view while at least one
+        /// <see cref="AdvancedWebView"/> with <see cref="IsInspectable"/> set is on screen.
+        /// </remarks>
+        public bool IsInspectable
+        {
+            get => (bool)GetValue(IsInspectableProperty);
+            set => SetValue(IsInspectableProperty, value);
+        }
+
         /// <summary>
         /// Clears the web view's HTTP cache (memory and disk).
         /// Cookies and local storage are kept.

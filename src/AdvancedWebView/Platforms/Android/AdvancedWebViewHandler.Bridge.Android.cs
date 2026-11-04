@@ -61,6 +61,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             Advanced?.BridgeCore.Reset();
             base.DisconnectHandler(platformView);
             ForgetClients();
+            SetInspectable(false); // release this view's vote on the process-wide debugging switch
         }
 
         internal partial void ExecuteScript(string script) => PlatformView?.EvaluateJavascript(script, null);

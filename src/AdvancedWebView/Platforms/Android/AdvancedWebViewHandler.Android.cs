@@ -42,5 +42,22 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         static void MapClearCache(AdvancedWebViewHandler handler, AdvancedWebView view, object? args) =>
             handler.PlatformView.ClearCache(true);
+
+        // WebView.SetWebContentsDebuggingEnabled is process-wide: keep it on while any connected view asks for it.
+        static int inspectableViews;
+        bool inspectableRegistered;
+
+        static void MapIsInspectable(AdvancedWebViewHandler handler, AdvancedWebView view) =>
+            handler.SetInspectable(view.IsInspectable);
+
+        void SetInspectable(bool inspectable)
+        {
+            if (inspectable == inspectableRegistered)
+                return;
+
+            inspectableRegistered = inspectable;
+            inspectableViews += inspectable ? 1 : -1; // mapper and disconnect run on the main thread
+            Android.Webkit.WebView.SetWebContentsDebuggingEnabled(inspectableViews > 0);
+        }
     }
 }
