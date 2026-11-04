@@ -48,6 +48,8 @@
                 </HorizontalStackLayout>
                 <Picker x:Name="CacheModePicker" Title="Cache" WidthRequest="160"
                         SelectedIndexChanged="OnCacheModeChanged" />
+                <Picker x:Name="NewWindowPicker" Title="New windows" WidthRequest="170"
+                        SelectedIndexChanged="OnNewWindowBehaviorChanged" />
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
@@ -59,7 +61,8 @@
             x:Name="WebView"
             Source="https://dotnet.microsoft.com"
             Navigating="OnNavigating"
-            Navigated="OnNavigated" />
+            Navigated="OnNavigated"
+            NewWindowRequested="OnNewWindowRequested" />
 
         <!-- Event log: last three navigation events -->
         <Label Grid.Row="4" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />

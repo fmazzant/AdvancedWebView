@@ -63,6 +63,7 @@ WebView.ClearCache();
 | `AllowMixedContent` | `false` | ✔ | | HTTP resources in HTTPS pages |
 | `AllowFileAccess` | `false` | ✔ | | `file://` and `content://` URLs |
 | `CacheMode` | `Default` | ✔ | | `Default`, `NoCache`, `CacheOnly`, `CacheElseNetwork` |
+| `NewWindowBehavior` | `OpenInSameView` | ✔ | ✔ | `target="_blank"` and `window.open`: `OpenInSameView`, `OpenInBrowser`, `Cancel` |
 
 Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating`, `Navigated`, `EvaluateJavaScriptAsync`, `GoBack`, `GoForward`, `Reload`.
 
@@ -84,7 +85,29 @@ Read-only bindable properties, updated by the web view on Android and iOS:
 <Label Text="{Binding CurrentUrl, Source={x:Reference WebView}}" />
 ```
 
-On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`. If your app replaces the web view's `WebViewClient` or `WebChromeClient`, these properties stop updating.
+### New windows
+
+Links with `target="_blank"` and calls to `window.open(url)` follow `NewWindowBehavior`. Handle `NewWindowRequested` to decide per URL:
+
+```csharp
+webView.NewWindowBehavior = NewWindowAction.OpenInSameView; // default
+
+webView.NewWindowRequested += (s, e) =>
+{
+    // e.Url, e.IsUserGesture
+    if (!e.Url.StartsWith("https://shop.example.com"))
+        e.Action = NewWindowAction.OpenInBrowser; // OpenInSameView, OpenInBrowser, Cancel
+};
+```
+
+- `OpenInSameView` raises `Navigating` as a normal navigation, so URLs you block there stay blocked.
+- `window.open` without a user gesture is blocked by the web view while `JavaScriptCanOpenWindowsAutomatically` is `false` (the default). `window.open()` without a URL is ignored.
+- iOS does not report the user gesture of `window.open`. `IsUserGesture` is `true` for links, and for `window.open` while `JavaScriptCanOpenWindowsAutomatically` is `false`; otherwise `window.open` is reported as `false`.
+- Android: a form with `target="_blank"` and `method="post"` opened in the same view is loaded as a GET, without its body. iOS keeps the POST.
+
+### Platform delegates
+
+On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state and new-window handling stop working.
 
 ## Methods
 
@@ -200,7 +223,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode picker, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `window.open()`, `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell
