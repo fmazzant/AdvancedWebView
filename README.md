@@ -295,6 +295,32 @@ On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `M
 | `ClearCache()` | Clears the HTTP cache (memory and disk). Cookies and local storage are kept. |
 | `LoadUrl(url, headers)` | Loads a page with extra HTTP headers. |
 | `PostUrlAsync(url, content, headers)` | Loads a page with a POST request. |
+| `ClearWebsiteDataAsync(types)` | Deletes cookies, web storage, IndexedDB, cache or service workers of every site. |
+
+`CookieManager` (property) reads and changes the web view's cookies. See [Cookies and website data](#cookies-and-website-data).
+
+### Cookies and website data
+
+MAUI's `Cookies` container is copied into the web view when a page loads. `CookieManager` also lets you read the cookies back, for example to reuse the web login in `HttpClient`, and delete them:
+
+```csharp
+IReadOnlyList<Cookie> cookies = await webView.CookieManager.GetCookiesAsync(new Uri("https://example.com"));
+await webView.CookieManager.SetCookieAsync(new Cookie("session", token, "/", "example.com"));
+await webView.CookieManager.DeleteCookiesAsync(new Uri("https://example.com"));
+await webView.CookieManager.ClearAllAsync();
+
+// Share the web session with HttpClient
+var container = new CookieContainer();
+await webView.CookieManager.CopyToAsync(container, new Uri("https://example.com"));
+using var client = new HttpClient(new HttpClientHandler { CookieContainer = container });
+
+await webView.ClearWebsiteDataAsync(WebsiteDataTypes.LocalStorage | WebsiteDataTypes.IndexedDb | WebsiteDataTypes.Cache);
+```
+
+- The cookies and the website data are shared by every `AdvancedWebView` of the app (Android's `CookieManager`, iOS's default `WKWebsiteDataStore`). `CookieManager` works before the control is loaded.
+- **Android returns only names and values.** The cookies it returns have the URL's host as domain and `/` as path, and no expiry, `Secure` or `HttpOnly`. `DeleteCookiesAsync` expires each name for the host and its parent domains with path `/`, so cookies set with another path may remain. Use `ClearAllAsync` to be sure. iOS returns every attribute, `HttpOnly` cookies included.
+- **Android cannot clear the storage types separately.** `LocalStorage`, `SessionStorage`, `IndexedDb` and `ServiceWorkers` all clear the whole web storage.
+- If you also set MAUI's `Cookies` container, its cookies are copied into the web view on navigation and can replace the ones set with `CookieManager`.
 
 ### Headers and POST
 
@@ -436,7 +462,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

@@ -107,6 +107,10 @@
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
                 <Button Text="Headers" Clicked="OnLoadWithHeadersClicked" />
                 <Button Text="POST" Clicked="OnPostClicked" />
+                <Button Text="Set cookie" Clicked="OnSetCookieClicked" />
+                <Button Text="Cookies" Clicked="OnShowCookiesClicked" />
+                <Button Text="HttpClient" Clicked="OnHttpClientClicked" />
+                <Button Text="Clear data" Clicked="OnClearDataClicked" />
             </HorizontalStackLayout>
         </ScrollView>
 

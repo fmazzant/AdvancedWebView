@@ -155,6 +155,51 @@ public partial class MainPage : ContentPage
 		}
 	}
 
+	// Cookie API. httpbin.org/cookies shows the cookies the server received.
+	static readonly Uri CookieSite = new("https://httpbin.org/cookies");
+
+	async void OnSetCookieClicked(object? sender, EventArgs e)
+	{
+		await WebView.CookieManager.SetCookieAsync(new System.Net.Cookie("advancedwebview", "sample-" + DateTime.Now.ToString("HHmmss"), "/", "httpbin.org") { Secure = true });
+		Log("Cookie set for httpbin.org");
+		WebView.Source = CookieSite.AbsoluteUri;
+	}
+
+	async void OnShowCookiesClicked(object? sender, EventArgs e)
+	{
+		if (!Uri.TryCreate(WebView.CurrentUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+		{
+			Log("Open a web site first");
+			return;
+		}
+
+		var cookies = await WebView.CookieManager.GetCookiesAsync(uri);
+		Log($"{cookies.Count} cookie(s) for {uri.Host}: {string.Join(", ", cookies.Select(c => c.Name))}");
+	}
+
+	// The web session reused by HttpClient: the server sees the same cookies as the page.
+	async void OnHttpClientClicked(object? sender, EventArgs e)
+	{
+		try
+		{
+			var container = new System.Net.CookieContainer();
+			await WebView.CookieManager.CopyToAsync(container, CookieSite);
+			using var client = new HttpClient(new HttpClientHandler { CookieContainer = container });
+			var json = await client.GetStringAsync(CookieSite);
+			Log($"HttpClient got: {json.Replace("\n", " ").Replace("  ", "")}");
+		}
+		catch (Exception ex)
+		{
+			Log($"HttpClient failed: {ex.Message}");
+		}
+	}
+
+	async void OnClearDataClicked(object? sender, EventArgs e)
+	{
+		await WebView.ClearWebsiteDataAsync(WebsiteDataTypes.All);
+		Log("Cookies, storage and cache cleared");
+	}
+
 	void OnErrorPageToggled(object? sender, ToggledEventArgs e) =>
 		WebView.ErrorPageHtml = e.Value ? ErrorPage : null;
 

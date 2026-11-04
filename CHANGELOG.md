@@ -17,6 +17,7 @@ The platform capabilities release.
 - **Web permissions:** `PermissionRequestBehavior` (`AskUser`, `Grant`, `Deny`) and the `PermissionRequested` event (`Origin`, `Permissions`, `Decision`, `GetDeferral()`) for the camera, the microphone and (Android) the location. Before, Android always refused them.
 - **Downloads:** `DownloadBehavior` (`Event`, `SystemDownloadManager` on Android, `Ignore`) and the `DownloadRequested` event (`Url`, `SuggestedFileName`, `MimeType`, `ContentLength`, `Cancel`, `SaveToAsync(path, progress)`). Files are downloaded with the web view's cookies and user agent; `blob:` and `data:` URLs are supported.
 - **Display options:** `ZoomEnabled`, `TextZoom`, `IsTransparent`, `TextSelectionEnabled`, `LinkPreviewEnabled` (iOS), `PreferredColorScheme` (iOS) and `AlgorithmicDarkening` (Android). Pull to refresh is documented with MAUI's `RefreshView`.
+- **Cookies and website data:** `CookieManager` (`GetCookiesAsync`, `SetCookieAsync`, `DeleteCookiesAsync`, `ClearAllAsync`, `CopyToAsync` to share the web session with `HttpClient`) and `ClearWebsiteDataAsync(WebsiteDataTypes)`.
 
 ### Changed
 
