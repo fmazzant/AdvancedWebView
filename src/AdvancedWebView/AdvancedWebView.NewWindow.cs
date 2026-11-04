@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Mafesoft.Maui.Controls
 {
     /// <summary>What happens when the page opens a new window (<c>target="_blank"</c> or <c>window.open</c>).</summary>
@@ -85,7 +83,7 @@ namespace Mafesoft.Maui.Controls
                     return true;
 
                 case NewWindowAction.OpenInBrowser:
-                    OpenInBrowser(url);
+                    OpenOutside(url);
                     return false;
 
                 default:
@@ -98,18 +96,5 @@ namespace Mafesoft.Maui.Controls
             !string.IsNullOrEmpty(url) &&
             Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
             !(uri.Scheme == "about" && uri.AbsolutePath == "blank");
-
-        async void OpenInBrowser(string url)
-        {
-            try
-            {
-                if (!await Launcher.Default.TryOpenAsync(new Uri(url)))
-                    LogWarning($"No app can open {url}.");
-            }
-            catch (Exception ex)
-            {
-                LogWarning($"Could not open {url} outside the app: {ex.Message}");
-            }
-        }
     }
 }

@@ -105,9 +105,29 @@ webView.NewWindowRequested += (s, e) =>
 - iOS does not report the user gesture of `window.open`. `IsUserGesture` is `true` for links, and for `window.open` while `JavaScriptCanOpenWindowsAutomatically` is `false`; otherwise `window.open` is reported as `false`.
 - Android: a form with `target="_blank"` and `method="post"` opened in the same view is loaded as a GET, without its body. iOS keeps the POST.
 
+### External links
+
+The web view cannot load `tel:`, `mailto:` and other app links, and shows an error page for them. AdvancedWebView hands them to the system instead. It can also send web sites you do not own to the system browser:
+
+```csharp
+webView.ExternalSchemes = ["tel", "mailto", "sms", "geo", "maps", "whatsapp", "intent", "market", "itms-apps"]; // default
+webView.InternalHosts = ["example.com", "*.example.com"]; // default: empty, every site stays inside
+
+webView.ExternalLinkOpening += (s, e) =>
+{
+    // e.Url, e.Reason (Scheme or Host)
+    e.Cancel = true; // the system does not open it, and the web view does not load it: handle it yourself
+};
+```
+
+- `Navigating` is raised first. A URL cancelled there is not opened outside either.
+- `InternalHosts`: `"example.com"` matches that host only, `"*.example.com"` its subdomains only. Only the top-level page is checked, so iframes from other hosts still load. Links opened as new windows in the same view follow the same rules.
+- Android `intent://` URLs open the app they name, limited to activities that accept browser links (as Chrome does). When no app handles them, the web view loads their `S.browser_fallback_url`.
+- Links leave the app through MAUI `Launcher.OpenAsync`. On iOS a scheme like `whatsapp:` opens only if the app is installed. You do not need `LSApplicationQueriesSchemes` or Android `<queries>` entries for this.
+
 ### Platform delegates
 
-On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state and new-window handling stop working.
+On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows and external links stop working.
 
 ## Methods
 
@@ -223,7 +243,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, a switch for `InternalHosts`, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

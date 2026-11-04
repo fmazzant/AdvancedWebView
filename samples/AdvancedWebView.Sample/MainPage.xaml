@@ -50,6 +50,10 @@
                         SelectedIndexChanged="OnCacheModeChanged" />
                 <Picker x:Name="NewWindowPicker" Title="New windows" WidthRequest="170"
                         SelectedIndexChanged="OnNewWindowBehaviorChanged" />
+                <HorizontalStackLayout>
+                    <Label Text="Only microsoft.com inside" VerticalOptions="Center" />
+                    <Switch Toggled="OnInternalHostsToggled" />
+                </HorizontalStackLayout>
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
@@ -62,7 +66,8 @@
             Source="https://dotnet.microsoft.com"
             Navigating="OnNavigating"
             Navigated="OnNavigated"
-            NewWindowRequested="OnNewWindowRequested" />
+            NewWindowRequested="OnNewWindowRequested"
+            ExternalLinkOpening="OnExternalLinkOpening" />
 
         <!-- Event log: last three navigation events -->
         <Label Grid.Row="4" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
