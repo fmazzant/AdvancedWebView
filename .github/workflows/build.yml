@@ -20,14 +20,30 @@ jobs:
         with:
           global-json-file: global.json
 
+      # The .NET 10 iOS workload needs Xcode 26; the runner's default Xcode may be older.
+      - name: Select latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '21'
+
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      - name: Restore
-        run: dotnet restore src/AdvancedWebView/AdvancedWebView.csproj
+      # Installs the Android platform (API 36) and build tools that .NET 10 compiles against.
+      - name: Install Android dependencies
+        run: >
+          dotnet build src/AdvancedWebView/AdvancedWebView.csproj
+          -t:InstallAndroidDependencies -f net10.0-android
+          -p:AndroidSdkDirectory="$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True
 
-      - name: Build
-        run: dotnet build src/AdvancedWebView/AdvancedWebView.csproj -c Release --no-restore
+      - name: Build library
+        run: dotnet build src/AdvancedWebView/AdvancedWebView.csproj -c Release
 
       # Debug targets the iOS simulator, so no code signing is needed.
       - name: Build sample app
