@@ -67,6 +67,13 @@ namespace Mafesoft.Maui.Controls
                   if (type === "message" && i >= 0) { listeners.splice(i, 1); }
                 },
 
+                // Error page (ErrorPageHtml): loads the URL that failed. Elsewhere it reloads the page.
+                // A normal navigation, so Navigating and the external-link rules still apply.
+                retry: function () {
+                  var url = window.__advancedWebViewFailedUrl;
+                  if (typeof url === "string" && url) { window.location.href = url; } else { window.location.reload(); }
+                },
+
                 __receive: function (envelope) {
                   if (envelope.type === "message") {
                     var event = { data: envelope.data };

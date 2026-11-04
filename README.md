@@ -125,9 +125,43 @@ webView.ExternalLinkOpening += (s, e) =>
 - Android `intent://` URLs open the app they name, limited to activities that accept browser links (as Chrome does). When no app handles them, the web view loads their `S.browser_fallback_url`.
 - Links leave the app through MAUI `Launcher.OpenAsync`. On iOS a scheme like `whatsapp:` opens only if the app is installed. You do not need `LSApplicationQueriesSchemes` or Android `<queries>` entries for this.
 
+### Load failures and error page
+
+```csharp
+webView.NavigationFailed += (s, e) =>
+{
+    // e.Url, e.Error, e.HttpStatusCode, e.Description
+    if (e.Error == WebNavigationError.HttpError && e.HttpStatusCode == 404)
+        e.ShowErrorPage = false; // keep the server's own 404 page
+};
+
+webView.ErrorPageHtml = """
+    <h1>Page not available</h1>
+    <p>{{description}}</p>
+    <button onclick="AdvancedWebView.retry()">Retry</button>
+    """;
+
+webView.ServerCertificateError += (s, e) => e.Proceed = false; // default: reject
+```
+
+| `WebNavigationError` | Android | iOS (`NSURLErrorDomain`) |
+|---|---|---|
+| `NoInternet` | `net::ERR_INTERNET_DISCONNECTED` | `-1009`, `-1020`, `-1005` |
+| `Timeout` | `ERROR_TIMEOUT` | `-1001` |
+| `HostNotFound` | `ERROR_HOST_LOOKUP`, `ERROR_CONNECT` | `-1003`, `-1004`, `-1006` |
+| `SslError` | `ERROR_FAILED_SSL_HANDSHAKE`, rejected certificate | `-1200` … `-1206` |
+| `HttpError` | HTTP status ≥ 400 | HTTP status ≥ 400 |
+| `Cancelled` | `net::ERR_ABORTED` | `-999`, WebKit `102` |
+| `Unknown` | anything else | anything else |
+
+- Only the top-level page is reported. Failures of iframes and of resources such as images are not.
+- `ErrorPageHtml` placeholders: `{{url}}`, `{{description}}`, `{{error}}`, `{{statusCode}}`. They are HTML-encoded. The page is shown for every error except `Cancelled`. Set `e.ShowErrorPage = false` to keep the current page.
+- `AdvancedWebView.retry()` loads the failed URL again as a normal navigation, so it raises `Navigating`. It needs JavaScript and the bridge. The error page is local content, so it can use the bridge whatever `Bridge.AllowedOrigins` says.
+- Invalid certificates are rejected unless a `ServerCertificateError` handler sets `e.Proceed = true`. Do this only during development, for example for a local server with a self-signed certificate. Accepting every certificate exposes the connection to interception, and Google Play rejects apps that do it.
+
 ### Platform delegates
 
-On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows and external links stop working.
+On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows, external links and error handling stop working.
 
 ## Methods
 
@@ -243,7 +277,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, a switch for `InternalHosts`, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

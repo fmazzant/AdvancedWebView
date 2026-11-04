@@ -54,6 +54,10 @@
                     <Label Text="Only microsoft.com inside" VerticalOptions="Center" />
                     <Switch Toggled="OnInternalHostsToggled" />
                 </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Custom error page" VerticalOptions="Center" />
+                    <Switch Toggled="OnErrorPageToggled" />
+                </HorizontalStackLayout>
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
@@ -67,7 +71,9 @@
             Navigating="OnNavigating"
             Navigated="OnNavigated"
             NewWindowRequested="OnNewWindowRequested"
-            ExternalLinkOpening="OnExternalLinkOpening" />
+            ExternalLinkOpening="OnExternalLinkOpening"
+            NavigationFailed="OnNavigationFailed"
+            ServerCertificateError="OnServerCertificateError" />
 
         <!-- Event log: last three navigation events -->
         <Label Grid.Row="4" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
