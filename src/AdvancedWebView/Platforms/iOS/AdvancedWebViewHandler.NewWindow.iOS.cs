@@ -38,6 +38,13 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             public override void DecidePolicy(WKWebView webView, WKNavigationAction navigationAction, Action<WKNavigationActionPolicy> decisionHandler)
             {
+                // A link with the download attribute: DownloadRequested instead of a navigation.
+                if (handler.TryGetTarget(out var downloader) && downloader.TryStartDownload(navigationAction))
+                {
+                    decisionHandler(WKNavigationActionPolicy.Cancel);
+                    return;
+                }
+
                 // No target frame: the page asked for a new window. MAUI would load it in this view; decide here instead.
                 if (navigationAction.TargetFrame is null && handler.TryGetTarget(out var owner))
                 {

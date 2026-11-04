@@ -67,6 +67,18 @@ namespace Mafesoft.Maui.Controls
                   if (type === "message" && i >= 0) { listeners.splice(i, 1); }
                 },
 
+                // Downloads of blob: URLs: C# reads the blob as base64 through InvokeJavaScriptRawAsync.
+                __readBlob: function (url) {
+                  return fetch(url).then(function (r) { return r.blob(); }).then(function (blob) {
+                    return new Promise(function (resolve, reject) {
+                      var reader = new FileReader();
+                      reader.onload = function () { var s = String(reader.result); resolve(s.slice(s.indexOf(",") + 1)); };
+                      reader.onerror = function () { reject(reader.error || new Error("Could not read the blob.")); };
+                      reader.readAsDataURL(blob);
+                    });
+                  });
+                },
+
                 // Error page (ErrorPageHtml): loads the URL that failed. Elsewhere it reloads the page.
                 // A normal navigation, so Navigating and the external-link rules still apply.
                 retry: function () {
