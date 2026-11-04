@@ -168,6 +168,27 @@ On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `M
 | Method | Description |
 |---|---|
 | `ClearCache()` | Clears the HTTP cache (memory and disk). Cookies and local storage are kept. |
+| `LoadUrl(url, headers)` | Loads a page with extra HTTP headers. |
+| `PostUrlAsync(url, content, headers)` | Loads a page with a POST request. |
+
+### Headers and POST
+
+```csharp
+webView.LoadUrl("https://example.com/account", new Dictionary<string, string>
+{
+    ["Authorization"] = $"Bearer {token}",
+});
+
+await webView.PostUrlAsync("https://example.com/login", new FormUrlEncodedContent(new Dictionary<string, string>
+{
+    ["user"] = "mario",
+}));
+```
+
+- `Navigating` and `Navigated` are raised as for a link, and the external-link rules apply.
+- The headers go with this request only. They are not sent with the page's resources (images, scripts, API calls) or with later navigations, such as links the user taps. For an authenticated session, prefer a cookie (`Cookies`).
+- Android only posts `application/x-www-form-urlencoded` bodies, and cannot add headers to a POST. `PostUrlAsync` throws `NotSupportedException` otherwise. iOS supports any content type and headers.
+- Call these methods after the control is loaded (for example in its `Loaded` event). Before that, they throw `InvalidOperationException`.
 
 ## JavaScript bridge
 
@@ -277,7 +298,7 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties, cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

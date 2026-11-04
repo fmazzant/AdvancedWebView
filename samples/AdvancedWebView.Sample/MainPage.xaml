@@ -61,6 +61,8 @@
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
+                <Button Text="Headers" Clicked="OnLoadWithHeadersClicked" />
+                <Button Text="POST" Clicked="OnPostClicked" />
             </HorizontalStackLayout>
         </ScrollView>
 

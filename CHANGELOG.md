@@ -17,6 +17,7 @@ The navigation release.
 - **Load failures:** the `NavigationFailed` event (`Url`, `Error`, `HttpStatusCode`, `Description`, `ShowErrorPage`) with a normalized `WebNavigationError` (`NoInternet`, `Timeout`, `HostNotFound`, `SslError`, `HttpError`, `Cancelled`, `Unknown`), for network errors and HTTP 4xx/5xx of the top-level page.
 - **Custom error page:** `ErrorPageHtml` with `{{url}}`, `{{description}}`, `{{error}}` and `{{statusCode}}` placeholders, and `AdvancedWebView.retry()` in the page to load the failed URL again.
 - **Certificate errors:** the `ServerCertificateError` event. Invalid certificates are rejected unless the app sets `Proceed = true`.
+- **Headers and POST:** `LoadUrl(url, headers)` and `PostUrlAsync(url, content, headers)`. Android posts form-urlencoded bodies only, without extra headers.
 
 ### Changed
 

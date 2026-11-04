@@ -56,6 +56,30 @@ public partial class MainPage : ContentPage
 		</html>
 		""";
 
+	// httpbin.org echoes the request: the page shows the headers and the form the server received.
+	void OnLoadWithHeadersClicked(object? sender, EventArgs e) =>
+		WebView.LoadUrl("https://httpbin.org/headers", new Dictionary<string, string>
+		{
+			["Authorization"] = "Bearer sample-token",
+			["X-Sample"] = "AdvancedWebView",
+		});
+
+	async void OnPostClicked(object? sender, EventArgs e)
+	{
+		try
+		{
+			await WebView.PostUrlAsync("https://httpbin.org/post", new FormUrlEncodedContent(new Dictionary<string, string>
+			{
+				["user"] = "mario",
+				["note"] = "àèì & =",
+			}));
+		}
+		catch (Exception ex)
+		{
+			Log($"{ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
 	void OnErrorPageToggled(object? sender, ToggledEventArgs e) =>
 		WebView.ErrorPageHtml = e.Value ? ErrorPage : null;
 
