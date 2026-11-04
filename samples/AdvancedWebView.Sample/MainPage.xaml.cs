@@ -30,6 +30,16 @@ public partial class MainPage : ContentPage
 			WebView.NewWindowBehavior = (NewWindowAction)NewWindowPicker.SelectedIndex;
 	}
 
+	// tel:, mailto:, intent:// ... and, with the switch on, sites outside microsoft.com. Set e.Cancel to handle them yourself.
+	void OnExternalLinkOpening(object? sender, ExternalLinkOpeningEventArgs e) =>
+		Log($"Opening outside the app ({e.Reason}): {e.Url}");
+
+	void OnInternalHostsToggled(object? sender, ToggledEventArgs e)
+	{
+		WebView.InternalHosts = e.Value ? ["microsoft.com", "*.microsoft.com"] : [];
+		Log(e.Value ? "Only microsoft.com stays inside" : "Every site stays inside");
+	}
+
 	void OnNavigating(object? sender, WebNavigatingEventArgs e)
 	{
 		if (Uri.TryCreate(e.Url, UriKind.Absolute, out var uri) && BlockedHosts.Contains(uri.Host))

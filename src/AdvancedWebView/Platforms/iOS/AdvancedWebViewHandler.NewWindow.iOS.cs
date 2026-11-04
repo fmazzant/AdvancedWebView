@@ -45,7 +45,16 @@ namespace Mafesoft.Maui.Controls.Handlers
                     return;
                 }
 
-                base.DecidePolicy(webView, navigationAction, decisionHandler);
+                // MAUI raises Navigating and decides first; a navigation it allows may still leave the app
+                // (tel:, mailto:, hosts outside InternalHosts). Launcher also opens universal links in their app.
+                base.DecidePolicy(webView, navigationAction, policy =>
+                {
+                    if (policy == WKNavigationActionPolicy.Allow && handler.TryGetTarget(out var target) && target.Advanced is { } view &&
+                        view.TryOpenExternalLink(navigationAction.Request.Url?.AbsoluteString, navigationAction.TargetFrame?.MainFrame ?? true))
+                        decisionHandler(WKNavigationActionPolicy.Cancel);
+                    else
+                        decisionHandler(policy);
+                });
             }
         }
 

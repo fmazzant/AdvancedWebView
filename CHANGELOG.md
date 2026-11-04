@@ -13,6 +13,7 @@ The navigation release.
 
 - **Page state as bindable properties:** `Progress` (0 to 1), `IsLoading`, `Title` and `CurrentUrl`, read-only. `Title` and `CurrentUrl` also follow `document.title` changes and `history.pushState`.
 - **New windows:** `NewWindowBehavior` (`OpenInSameView`, `OpenInBrowser`, `Cancel`) and the `NewWindowRequested` event (`Url`, `IsUserGesture`, `Action`) for links with `target="_blank"` and `window.open`. Before, Android loaded them in the same view and iOS ignored `window.open`.
+- **External links:** `ExternalSchemes` (default `tel`, `mailto`, `sms`, `geo`, `maps`, `whatsapp`, `intent`, `market`, `itms-apps`) are handed to the system instead of showing an error page; `InternalHosts` sends other web sites to the system browser; the `ExternalLinkOpening` event (`Url`, `Reason`, `Cancel`) lets the app handle them. Android `intent://` URLs are supported, with `browser_fallback_url`.
 
 ### Changed
 

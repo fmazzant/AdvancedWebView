@@ -21,6 +21,18 @@
   <button id="btnConfirm">confirm()</button>
   <p id="confirmResult"></p>
   <p><a href="https://learn.microsoft.com/dotnet/maui/" target="_blank">Link with target="_blank"</a></p>
+
+  <h3>External links</h3>
+  <p>
+    <a href="tel:+390000000000">tel:</a> ·
+    <a href="mailto:test@example.com?subject=AdvancedWebView">mailto:</a> ·
+    <a href="geo:43.7696,11.2558">geo:</a> ·
+    <a href="https://github.com/fmazzant/AdvancedWebView">github.com</a> (outside the app when only microsoft.com stays inside)
+  </p>
+  <p>
+    Android: <a href="intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Fzxing%2Fzxing;end">intent:// with fallback</a>
+    (opens the app if installed, otherwise the fallback page)
+  </p>
   <button id="btnOpen">window.open() on tap</button>
   <button id="btnOpenNoGesture">window.open() without user gesture</button>
   <button id="btnTitle">Change document.title</button>

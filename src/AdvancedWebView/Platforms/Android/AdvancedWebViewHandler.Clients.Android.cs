@@ -1,3 +1,4 @@
+using Android.Content;
 using Android.Graphics;
 using Android.OS;
 using Android.Webkit;
@@ -26,13 +27,71 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         void OpenNewWindow(string url, bool isUserGesture)
         {
-            if (PlatformView is not { } webView || Advanced is not { } view || !view.OnNewWindowRequested(url, isUserGesture))
+            if (Advanced is { } view && view.OnNewWindowRequested(url, isUserGesture))
+                NavigateInView(url);
+        }
+
+        /// <summary>
+        /// Loads a URL the app decided to open (new window in the same view, intent fallback) with the checks of a
+        /// normal navigation. LoadUrl skips ShouldOverrideUrlLoading, where MAUI raises Navigating.
+        /// </summary>
+        void NavigateInView(string url)
+        {
+            if (PlatformView is not { } webView || Advanced is not { } view)
                 return;
 
-            // LoadUrl does not go through ShouldOverrideUrlLoading, where MAUI raises Navigating: raise it here,
-            // so apps can still block the URL.
-            if (!((IWebView)view).Navigating(WebNavigationEvent.NewPage, url))
+            if (((IWebView)view).Navigating(WebNavigationEvent.NewPage, url))
+                return; // cancelled by the app
+
+            if (!view.TryOpenExternalLink(url, isMainFrame: true, OpenExternal))
                 webView.LoadUrl(url);
+        }
+
+        /// <summary>Opens an external URL: intent:// with Android's own parser, anything else with the shared Launcher code.</summary>
+        void OpenExternal(string url)
+        {
+            if (ExternalLinkRules.GetScheme(url) == "intent")
+                OpenIntent(url);
+            else
+                Advanced?.OpenOutside(url);
+        }
+
+        // intent://host/path#Intent;scheme=...;package=...;S.browser_fallback_url=...;end
+        // Opened like Chrome does: only browsable activities, no explicit component, fallback URL when no app handles it.
+        void OpenIntent(string url)
+        {
+            if (PlatformView?.Context is not { } context)
+                return;
+
+            Intent intent;
+            try
+            {
+                intent = Intent.ParseUri(url, IntentUriType.Scheme)!;
+            }
+            catch (Exception ex)
+            {
+                Log($"Invalid intent URL {url}: {ex.Message}");
+                return;
+            }
+
+            intent.AddCategory(Intent.CategoryBrowsable);
+            intent.SetComponent(null);
+            intent.Selector = null;
+            if (context is not Android.App.Activity)
+                intent.AddFlags(ActivityFlags.NewTask);
+
+            try
+            {
+                context.StartActivity(intent);
+            }
+            catch (ActivityNotFoundException)
+            {
+                var fallback = intent.GetStringExtra("browser_fallback_url");
+                if (ExternalLinkRules.GetScheme(fallback) is "http" or "https")
+                    NavigateInView(fallback!);
+                else
+                    Log($"No app can open {url}, and it has no browser_fallback_url.");
+            }
         }
 
         // MAUI's DisconnectHandler disconnects and detaches the clients; they cannot be reused afterwards.
@@ -50,6 +109,17 @@ namespace Mafesoft.Maui.Controls.Handlers
                 this.handler = new WeakReference<AdvancedWebViewHandler>(handler);
 
             AdvancedWebView? View => handler.TryGetTarget(out var h) ? h.Advanced : null;
+
+            // Links and script navigations (not LoadUrl). MAUI's base raises Navigating first: a URL cancelled there
+            // is not opened outside either.
+            public override bool ShouldOverrideUrlLoading(AWebView? view, IWebResourceRequest? request)
+            {
+                if (base.ShouldOverrideUrlLoading(view, request))
+                    return true;
+
+                return handler.TryGetTarget(out var owner) && owner.Advanced is { } v &&
+                    v.TryOpenExternalLink(request?.Url?.ToString(), request?.IsForMainFrame ?? true, owner.OpenExternal);
+            }
 
             public override void OnPageStarted(AWebView? view, string? url, Bitmap? favicon)
             {

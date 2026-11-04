@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\src\AdvancedWebView\Bridge\*.cs" Link="Bridge\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\AdvancedWebView\Navigation\*.cs" Link="Navigation\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
