@@ -58,6 +58,12 @@
                         SelectedIndexChanged="OnCacheModeChanged" />
                 <Picker x:Name="NewWindowPicker" Title="New windows" WidthRequest="170"
                         SelectedIndexChanged="OnNewWindowBehaviorChanged" />
+                <Picker x:Name="PermissionPicker" Title="Permissions" WidthRequest="150"
+                        SelectedIndexChanged="OnPermissionBehaviorChanged" />
+                <HorizontalStackLayout>
+                    <Label Text="Ask in app" VerticalOptions="Center" />
+                    <Switch x:Name="AskInAppSwitch" />
+                </HorizontalStackLayout>
                 <HorizontalStackLayout>
                     <Label Text="Only microsoft.com inside" VerticalOptions="Center" />
                     <Switch Toggled="OnInternalHostsToggled" />
@@ -85,6 +91,7 @@
             NavigationFailed="OnNavigationFailed"
             FullscreenChanged="OnFullscreenChanged"
             FileChooserRequested="OnFileChooserRequested"
+            PermissionRequested="OnPermissionRequested"
             ServerCertificateError="OnServerCertificateError" />
 
         <!-- Event log: last three navigation events -->

@@ -66,6 +66,7 @@ WebView.ClearCache();
 | `NewWindowBehavior` | `OpenInSameView` | ✔ | ✔ | `target="_blank"` and `window.open`: `OpenInSameView`, `OpenInBrowser`, `Cancel` |
 | `IsInspectable` | `false` | ✔ | ✔ | Debug with Chrome DevTools / Safari Web Inspector; iOS 16.4 or later. See [Debugging the page](#debugging-the-page) |
 | `FullscreenEnabled` | `true` | ✔ | ✔ | Fullscreen video and `element.requestFullscreen`. See [Fullscreen](#fullscreen) |
+| `PermissionRequestBehavior` | `AskUser` | ✔ | ✔ | Camera, microphone and location asked by the page: `AskUser`, `Grant`, `Deny`. See [Permissions](#permissions) |
 
 ### File upload
 
@@ -91,6 +92,40 @@ Manifest and Info.plist entries for the camera and the photo library:
 |---|---|
 | Android | `<uses-permission android:name="android.permission.CAMERA" />`, and `<queries>` with the `android.media.action.IMAGE_CAPTURE` and `VIDEO_CAPTURE` intents (needed by `MediaPicker` on Android 11 or later) |
 | iOS | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` (for videos) |
+
+### Permissions
+
+Pages ask for the camera and the microphone with `getUserMedia`, and for the location with `navigator.geolocation`:
+
+```csharp
+webView.PermissionRequestBehavior = PermissionDecision.AskUser; // default; Grant, Deny
+
+webView.PermissionRequested += async (s, e) =>
+{
+    // e.Origin, e.Permissions (Camera | Microphone | Geolocation), e.Decision
+    using var deferral = e.GetDeferral(); // before the first await: the page waits for the answer
+    e.Decision = await page.DisplayAlertAsync("Camera", $"{e.Origin?.Host} wants to use the camera", "Allow", "Deny")
+        ? PermissionDecision.Grant
+        : PermissionDecision.Deny;
+};
+```
+
+| Decision | Android | iOS |
+|---|---|---|
+| `AskUser` | Like `Grant`: Android has no per-site dialog. Handle `PermissionRequested` to show your own | WebKit asks the user for the site |
+| `Grant` | The page gets what the app has. The OS permission dialog appears the first time | The page gets it without WebKit's dialog. The OS dialog appears the first time |
+| `Deny` | The page's request fails | The page's request fails |
+
+- Before, on Android, these requests were always refused.
+- iOS has no hook for the location: WebKit asks the user for each site, and `PermissionRequested` is raised only for the camera and the microphone.
+- `getUserMedia` needs a secure context (`https://`).
+
+Manifest and Info.plist entries:
+
+| Platform | Entries |
+|---|---|
+| Android | `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION` |
+| iOS | `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `NSLocationWhenInUseUsageDescription` |
 
 ### Fullscreen
 
@@ -352,7 +387,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, file upload (single, multiple, PDF only, camera), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

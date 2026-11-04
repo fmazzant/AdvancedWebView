@@ -5,6 +5,11 @@
 	<uses-permission android:name="android.permission.INTERNET" />
 	<!-- <input type="file" capture>: MediaPicker takes the photo or video. -->
 	<uses-permission android:name="android.permission.CAMERA" />
+	<!-- getUserMedia({ audio }) and navigator.geolocation in web pages (PermissionRequested). -->
+	<uses-permission android:name="android.permission.RECORD_AUDIO" />
+	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 	<queries>
 		<intent>
 			<action android:name="android.media.action.IMAGE_CAPTURE" />

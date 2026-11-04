@@ -33,6 +33,9 @@
 	<string>Record audio for videos uploaded in web pages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose photos to upload in web pages.</string>
+	<!-- navigator.geolocation in web pages. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Share your location with web pages that ask for it.</string>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>
