@@ -22,6 +22,15 @@
   <p id="confirmResult"></p>
   <p><a href="https://learn.microsoft.com/dotnet/maui/" target="_blank">Link with target="_blank"</a></p>
 
+  <h3>Fullscreen</h3>
+  <video controls playsinline width="100%"
+         src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+  <div id="fsBox" style="padding: 12px; background: #512BD4; color: #fff;">
+    Element fullscreen
+    <button id="btnFullscreen">element.requestFullscreen()</button>
+  </div>
+  <p id="fsResult"></p>
+
   <h3>Load failures</h3>
   <p>
     <a href="https://httpbin.org/status/404">HTTP 404</a> ·
@@ -69,6 +78,20 @@
     };
     document.getElementById("btnOpenNoGesture").onclick = function () {
       setTimeout(function () { window.open("https://dotnet.microsoft.com", "_blank"); }, 1500);
+    };
+
+    // FullscreenEnabled = false makes this fail; FullscreenChanged reports enter/exit.
+    document.getElementById("btnFullscreen").onclick = function () {
+      var box = document.getElementById("fsBox");
+      var request = box.requestFullscreen || box.webkitRequestFullscreen;
+      var result = document.getElementById("fsResult");
+      if (!request) { result.textContent = "Fullscreen API not available"; return; }
+      try {
+        var p = request.call(box);
+        if (p && p.catch) { p.catch(function (e) { result.textContent = "Fullscreen refused: " + e.message; }); }
+      } catch (e) {
+        result.textContent = "Fullscreen refused: " + e.message;
+      }
     };
 
     // Title and CurrentUrl must follow these changes without a page load.

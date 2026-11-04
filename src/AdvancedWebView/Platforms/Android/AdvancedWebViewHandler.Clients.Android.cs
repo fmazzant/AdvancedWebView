@@ -243,6 +243,33 @@ namespace Mafesoft.Maui.Controls.Handlers
                 View?.SetTitle(title);
             }
 
+            // Fullscreen video / element.requestFullscreen. MAUI's base shows the view over the activity and hides
+            // the system bars; AdvancedWebView adds FullscreenEnabled, the back button and FullscreenChanged.
+            public override void OnShowCustomView(Android.Views.View? view, ICustomViewCallback? callback)
+            {
+                if (!handler.TryGetTarget(out var owner) || owner.Advanced is not { } v)
+                {
+                    base.OnShowCustomView(view, callback);
+                    return;
+                }
+
+                if (!v.FullscreenEnabled)
+                {
+                    callback?.OnCustomViewHidden(); // tells the page that fullscreen did not happen
+                    return;
+                }
+
+                base.OnShowCustomView(view, callback);
+                owner.OnFullscreenEntered();
+            }
+
+            public override void OnHideCustomView()
+            {
+                base.OnHideCustomView();
+                if (handler.TryGetTarget(out var owner))
+                    owner.OnFullscreenExited();
+            }
+
             // target="_blank" and window.open. The URL is not passed here: hand the page a hidden web view and catch
             // the first URL it tries to load.
             public override bool OnCreateWindow(AWebView? view, bool isDialog, bool isUserGesture, Message? resultMsg)

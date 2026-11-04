@@ -20,6 +20,14 @@ public partial class MainPage : ContentPage
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
 	}
 
+	// Hide the app's bars while a video is fullscreen. On Android the back button leaves fullscreen.
+	void OnFullscreenChanged(object? sender, FullscreenChangedEventArgs e)
+	{
+		Shell.SetNavBarIsVisible(this, !e.IsFullscreen);
+		Shell.SetTabBarIsVisible(this, !e.IsFullscreen);
+		Log(e.IsFullscreen ? "Fullscreen on" : "Fullscreen off");
+	}
+
 	// target="_blank" and window.open. e.Action starts as NewWindowBehavior (picker); change it here to decide per URL.
 	void OnNewWindowRequested(object? sender, NewWindowRequestedEventArgs e) =>
 		Log($"New window ({e.Action}, gesture: {e.IsUserGesture}): {e.Url}");
