@@ -65,6 +65,21 @@ WebView.ClearCache();
 | `CacheMode` | `Default` | ✔ | | `Default`, `NoCache`, `CacheOnly`, `CacheElseNetwork` |
 | `NewWindowBehavior` | `OpenInSameView` | ✔ | ✔ | `target="_blank"` and `window.open`: `OpenInSameView`, `OpenInBrowser`, `Cancel` |
 | `IsInspectable` | `false` | ✔ | ✔ | Debug with Chrome DevTools / Safari Web Inspector; iOS 16.4 or later. See [Debugging the page](#debugging-the-page) |
+| `FullscreenEnabled` | `true` | ✔ | ✔ | Fullscreen video and `element.requestFullscreen`. See [Fullscreen](#fullscreen) |
+
+### Fullscreen
+
+```csharp
+webView.FullscreenChanged += (s, e) =>
+{
+    Shell.SetNavBarIsVisible(this, !e.IsFullscreen);
+    Shell.SetTabBarIsVisible(this, !e.IsFullscreen);
+};
+```
+
+- `IsFullscreen` (read-only, bindable) and `FullscreenChanged` report fullscreen of the page.
+- **Android:** a video player's fullscreen button and `element.requestFullscreen()` show the content over the whole app and hide the system bars (MAUI does this). AdvancedWebView adds the back button, which leaves fullscreen, and leaves fullscreen when the view goes away. With `FullscreenEnabled = false` the request is refused.
+- **iOS:** `FullscreenEnabled` turns on the HTML fullscreen API (`element.requestFullscreen()`, iOS 16.4 or later). It is read when the view is created. Videos also have the native player's fullscreen. WebKit does not report it, so `FullscreenChanged` is raised only for element fullscreen (iOS 16 or later).
 
 Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating`, `Navigated`, `EvaluateJavaScriptAsync`, `GoBack`, `GoForward`, `Reload`.
 
@@ -312,7 +327,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

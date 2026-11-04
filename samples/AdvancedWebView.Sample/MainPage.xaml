@@ -47,6 +47,10 @@
                     <Switch IsToggled="{Binding AllowMixedContent, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
+                    <Label Text="Fullscreen" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding FullscreenEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
                     <Label Text="Inspectable" VerticalOptions="Center" />
                     <Switch IsToggled="{Binding IsInspectable, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
                 </HorizontalStackLayout>
@@ -79,6 +83,7 @@
             NewWindowRequested="OnNewWindowRequested"
             ExternalLinkOpening="OnExternalLinkOpening"
             NavigationFailed="OnNavigationFailed"
+            FullscreenChanged="OnFullscreenChanged"
             ServerCertificateError="OnServerCertificateError" />
 
         <!-- Event log: last three navigation events -->

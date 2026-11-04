@@ -58,6 +58,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             bridgeOnPageLoad = false;
             RemoveUserScripts();
 
+            ExitFullscreen();
             Advanced?.BridgeCore.Reset();
             base.DisconnectHandler(platformView);
             ForgetClients();

@@ -24,6 +24,11 @@ namespace Mafesoft.Maui.Controls.Handlers
                 config.MediaTypesRequiringUserActionForPlayback = view.MediaPlaybackRequiresUserGesture
                     ? WKAudiovisualMediaTypes.All
                     : WKAudiovisualMediaTypes.None;
+
+                // HTML fullscreen API (element.requestFullscreen), off by default in WebKit.
+                // Videos also use the native player's fullscreen, which this setting does not control.
+                if (OperatingSystem.IsIOSVersionAtLeast(16, 4))
+                    config.Preferences.ElementFullscreenEnabled = view.FullscreenEnabled;
             }
 
             SetUpBridge(config);

@@ -12,6 +12,7 @@ The platform capabilities release.
 ### Added
 
 - **`IsInspectable`:** debug the page with Chrome DevTools (Android) or the Safari Web Inspector (iOS 16.4 or later).
+- **Fullscreen:** `FullscreenEnabled`, `IsFullscreen` and the `FullscreenChanged` event. Android: the back button leaves fullscreen. iOS 16.4 or later: the HTML fullscreen API (`element.requestFullscreen`) is enabled.
 
 ## [1.2.0] - Unreleased
 

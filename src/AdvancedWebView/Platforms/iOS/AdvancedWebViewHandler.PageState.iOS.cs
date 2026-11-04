@@ -19,6 +19,10 @@ namespace Mafesoft.Maui.Controls.Handlers
             Observe(platformView, "title", (view, web) => view.SetTitle(web.Title));
             // Also changes on history.pushState / replaceState.
             Observe(platformView, "URL", (view, web) => view.SetCurrentUrl(web.Url?.AbsoluteString));
+
+            // Element fullscreen (iOS 16+). The native video player's fullscreen is not reported by WebKit.
+            if (OperatingSystem.IsIOSVersionAtLeast(16))
+                Observe(platformView, "fullscreenState", (view, web) => view.SetFullscreen(web.FullscreenState == WKFullscreenState.InFullscreen));
         }
 
         void Observe(WKWebView platformView, string keyPath, Action<AdvancedWebView, WKWebView> update)
