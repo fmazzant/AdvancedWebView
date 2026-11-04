@@ -17,7 +17,7 @@
   <!-- NuGet package metadata -->
   <PropertyGroup>
     <PackageId>Mafesoft.Maui.AdvancedWebView</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.3.0</Version>
     <Authors>Federico Mazzanti</Authors>
     <Copyright>Copyright (c) 2025 Federico Mazzanti</Copyright>
     <Description>AdvancedWebView is a WebView for .NET MAUI (Android and iOS) with a JavaScript bridge that works with any site: two-way messages, C# handlers the page awaits as Promises, typed calls to page functions, injected scripts and styles, and per-origin security. It also exposes platform settings such as JavaScript, popups, scroll bounce, mixed content, file access and cache control.</Description>
