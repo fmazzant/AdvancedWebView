@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:awv="clr-namespace:Mafesoft.Maui.Controls;assembly=Mafesoft.Maui.AdvancedWebView"
+             x:Class="AdvancedWebViewSample.BridgePage"
+             Title="Bridge">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- App side of the bridge -->
+        <ScrollView Grid.Row="0" Orientation="Horizontal" Padding="8">
+            <HorizontalStackLayout Spacing="8">
+                <Button Text="Send to page" Clicked="OnSendClicked" />
+                <Button Text="demo.add(2, 3)" Clicked="OnAddClicked" />
+                <Button Text="demo.greetLater" Clicked="OnGreetClicked" />
+                <Button Text="demo.fail" Clicked="OnFailClicked" />
+                <Button Text="Highlight CSS" Clicked="OnToggleCssClicked" />
+                <Button Text="Bridge demo" Clicked="OnDemoPageClicked" />
+                <Button Text="example.com" Clicked="OnExampleClicked" />
+                <HorizontalStackLayout>
+                    <Label Text="Allow example.com" VerticalOptions="Center" />
+                    <Switch x:Name="AllowExampleSwitch" Toggled="OnAllowExampleToggled" />
+                </HorizontalStackLayout>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <awv:AdvancedWebView Grid.Row="1" x:Name="WebView" MessageReceived="OnMessageReceived" />
+
+        <!-- Event log: last five lines -->
+        <Label Grid.Row="2" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="5" />
+    </Grid>
+
+</ContentPage>

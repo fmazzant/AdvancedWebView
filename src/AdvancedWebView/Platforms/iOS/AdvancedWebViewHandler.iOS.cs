@@ -26,8 +26,7 @@ namespace Mafesoft.Maui.Controls.Handlers
                     : WKAudiovisualMediaTypes.None;
             }
 
-            bridgeMessageHandler = new BridgeScriptMessageHandler(this);
-            AddBridge(config, bridgeMessageHandler);
+            SetUpBridge(config);
 
             return new MauiWKWebView(CGRect.Empty, this, config);
         }

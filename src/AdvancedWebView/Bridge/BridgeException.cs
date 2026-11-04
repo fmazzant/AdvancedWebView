@@ -43,5 +43,8 @@ namespace Mafesoft.Maui.Controls
 
         /// <summary>The handler threw an exception.</summary>
         public const string HandlerError = nameof(HandlerError);
+
+        /// <summary>The page's origin is not in <see cref="BridgeOptions.AllowedOrigins"/>.</summary>
+        public const string OriginNotAllowed = nameof(OriginNotAllowed);
     }
 }

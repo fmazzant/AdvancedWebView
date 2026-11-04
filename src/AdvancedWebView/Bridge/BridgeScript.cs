@@ -88,12 +88,50 @@ namespace Mafesoft.Maui.Controls
                     if (info.details) { error.details = info.details; }
                     call.reject(error);
                   }
+                },
+
+                // C# InvokeJavaScriptAsync: calls window.<name> with the arguments and posts back the (awaited) result.
+                __call: function (id, name, args) {
+                  function errorInfo(e) {
+                    return { message: (e && e.message) ? String(e.message) : String(e), stack: (e && e.stack) ? String(e.stack) : null };
+                  }
+                  function reply(envelope) {
+                    envelope.id = id;
+                    try {
+                      send(envelope);
+                    } catch (e) {
+                      // Typically a result JSON.stringify cannot handle (circular object).
+                      try { send({ type: "callError", id: id, error: errorInfo(e) }); } catch (ignored) { }
+                    }
+                  }
+                  try {
+                    var parts = String(name).split(".");
+                    var owner = window;
+                    var target = window;
+                    for (var i = 0; i < parts.length; i++) {
+                      owner = target;
+                      target = (target === null || target === undefined) ? undefined : target[parts[i]];
+                    }
+                    if (typeof target !== "function") { throw new TypeError("'" + name + "' is not a function."); }
+                    Promise.resolve(target.apply(owner, args || [])).then(
+                      function (result) { reply({ type: "callResult", result: toJson(result) }); },
+                      function (e) { reply({ type: "callError", error: errorInfo(e) }); });
+                  } catch (e) {
+                    reply({ type: "callError", error: errorInfo(e) });
+                  }
                 }
               };
 
               api.ready = Promise.resolve(api);
               Object.freeze(api);
               Object.defineProperty(window, "AdvancedWebView", { value: api, writable: false, configurable: false, enumerable: true });
+
+              // Android: replies to this frame arrive on the object injected by WebMessageListener.
+              if (window.__advancedWebViewNative) {
+                window.__advancedWebViewNative.onmessage = function (event) {
+                  try { api.__receive(JSON.parse(event.data)); } catch (e) { }
+                };
+              }
 
               try { window.dispatchEvent(new Event("advancedwebviewready")); } catch (e) { }
             })();

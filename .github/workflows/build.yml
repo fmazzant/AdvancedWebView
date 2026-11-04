@@ -45,6 +45,10 @@ jobs:
       - name: Build library
         run: dotnet build src/AdvancedWebView/AdvancedWebView.csproj -c Release
 
+      # Bridge core + JavaScript (in Jint) end-to-end tests; plain net10.0, no device needed.
+      - name: Test
+        run: dotnet test --project tests/AdvancedWebView.Tests/AdvancedWebView.Tests.csproj -c Release
+
       # Debug targets the iOS simulator, so no code signing is needed.
       - name: Build sample app
         run: dotnet build samples/AdvancedWebView.Sample/AdvancedWebView.Sample.csproj -c Debug

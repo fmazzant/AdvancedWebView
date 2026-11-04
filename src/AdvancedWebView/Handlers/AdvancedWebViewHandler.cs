@@ -47,6 +47,9 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         partial void OnPageLoadedCore();
 
+        /// <summary>Re-applies <see cref="AdvancedWebView.UserScripts"/> and <see cref="AdvancedWebView.UserStyleSheets"/>.</summary>
+        internal partial void UpdateUserScripts();
+
         AdvancedWebView? Advanced => VirtualView as AdvancedWebView;
     }
 }

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Mafesoft.Maui.Controls.Handlers;
+using Microsoft.Extensions.Logging;
 
 namespace Mafesoft.Maui.Controls
 {
@@ -14,12 +15,17 @@ namespace Mafesoft.Maui.Controls
         public AdvancedWebView()
         {
             Navigated += (_, _) => (Handler as AdvancedWebViewHandler)?.OnPageLoaded();
+            UserScripts.CollectionChanged += (_, _) => (Handler as AdvancedWebViewHandler)?.UpdateUserScripts();
+            UserStyleSheets.CollectionChanged += (_, _) => (Handler as AdvancedWebViewHandler)?.UpdateUserScripts();
         }
 
-        /// <summary>Settings of the JavaScript bridge.</summary>
+        /// <summary>Settings of the JavaScript bridge: allowed origins, iframes, timeout.</summary>
         public BridgeOptions Bridge { get; } = new();
 
-        internal WebViewBridge BridgeCore => bridgeCore ??= new WebViewBridge(Bridge, ExecuteBridgeScriptAsync, OnMessageReceived);
+        internal WebViewBridge BridgeCore => bridgeCore ??= new WebViewBridge(Bridge, ExecuteBridgeScriptAsync, OnMessageReceived, LogWarning);
+
+        void LogWarning(string message) =>
+            Handler?.MauiContext?.Services.GetService<ILogger<AdvancedWebView>>()?.LogWarning("{Message}", message);
 
         /// <summary>
         /// Raised on the main thread when the page calls <c>AdvancedWebView.postMessage(data)</c>.
@@ -36,7 +42,7 @@ namespace Mafesoft.Maui.Controls
         public Task PostMessageAsync(string message)
         {
             ArgumentNullException.ThrowIfNull(message);
-            return ExecuteBridgeScriptAsync(BridgeProtocol.MessageScript(BridgeProtocol.JsonString(message)));
+            return ExecuteBridgeScriptAsync(BridgeProtocol.ReceiveScript(BridgeProtocol.MessageEnvelope(BridgeProtocol.JsonString(message))));
         }
 
         /// <summary>
@@ -46,14 +52,14 @@ namespace Mafesoft.Maui.Controls
         [RequiresUnreferencedCode(WebViewBridge.ReflectionWarning)]
         [RequiresDynamicCode(WebViewBridge.ReflectionWarning)]
         public Task PostMessageAsync<T>(T value) =>
-            ExecuteBridgeScriptAsync(BridgeProtocol.MessageScript(JsonSerializer.Serialize(value, WebViewBridge.JsonOptions)));
+            ExecuteBridgeScriptAsync(BridgeProtocol.ReceiveScript(BridgeProtocol.MessageEnvelope(JsonSerializer.Serialize(value, WebViewBridge.JsonOptions))));
 
         /// <summary>Sends a value to the page, serialized with source-generated metadata (trimming and AOT safe).</summary>
         /// <exception cref="InvalidOperationException">The control is not attached to its handler.</exception>
         public Task PostMessageAsync<T>(T value, JsonTypeInfo<T> typeInfo)
         {
             ArgumentNullException.ThrowIfNull(typeInfo);
-            return ExecuteBridgeScriptAsync(BridgeProtocol.MessageScript(JsonSerializer.Serialize(value, typeInfo)));
+            return ExecuteBridgeScriptAsync(BridgeProtocol.ReceiveScript(BridgeProtocol.MessageEnvelope(JsonSerializer.Serialize(value, typeInfo))));
         }
 
         #endregion
