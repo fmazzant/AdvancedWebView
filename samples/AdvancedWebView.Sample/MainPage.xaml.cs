@@ -17,9 +17,47 @@ public partial class MainPage : ContentPage
 		CacheModePicker.SelectedIndex = (int)WebView.CacheMode;
 		NewWindowPicker.ItemsSource = Enum.GetNames<NewWindowAction>();
 		NewWindowPicker.SelectedIndex = (int)WebView.NewWindowBehavior;
+		DownloadPicker.ItemsSource = Enum.GetNames<DownloadBehavior>();
+		DownloadPicker.SelectedIndex = (int)WebView.DownloadBehavior;
 		PermissionPicker.ItemsSource = Enum.GetNames<PermissionDecision>();
 		PermissionPicker.SelectedIndex = (int)WebView.PermissionRequestBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+	}
+
+	void OnDownloadBehaviorChanged(object? sender, EventArgs e)
+	{
+		if (DownloadPicker.SelectedIndex >= 0)
+			WebView.DownloadBehavior = (DownloadBehavior)DownloadPicker.SelectedIndex;
+	}
+
+	// With "Event", the app saves the file itself (here in the cache) and opens it.
+	// With "SystemDownloadManager" (Android), returning without SaveToAsync lets the system download it.
+	async void OnDownloadRequested(object? sender, DownloadRequestedEventArgs e)
+	{
+		Log($"Download: {e.SuggestedFileName} ({e.MimeType ?? "?"}, {e.ContentLength?.ToString() ?? "?"} bytes)");
+		if (WebView.DownloadBehavior != DownloadBehavior.Event)
+			return;
+
+		var path = Path.Combine(FileSystem.CacheDirectory, e.SuggestedFileName);
+		var lastStep = -1;
+		var progress = new Progress<double>(p =>
+		{
+			var step = (int)(p * 4); // log at 0, 25, 50, 75 and 100 %
+			if (step == lastStep)
+				return;
+			lastStep = step;
+			Log($"Downloading {e.SuggestedFileName}: {p:P0}");
+		});
+
+		try
+		{
+			await e.SaveToAsync(path, progress);
+			await Launcher.Default.OpenAsync(new OpenFileRequest(e.SuggestedFileName, new ReadOnlyFile(path, e.MimeType ?? "application/octet-stream")));
+		}
+		catch (Exception ex)
+		{
+			Log($"Download failed: {ex.Message}");
+		}
 	}
 
 	void OnPermissionBehaviorChanged(object? sender, EventArgs e)

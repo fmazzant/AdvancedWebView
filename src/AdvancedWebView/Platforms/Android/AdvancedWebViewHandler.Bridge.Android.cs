@@ -41,6 +41,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             }
 
             UpdateUserScripts();
+            SetUpDownloads(platformView);
         }
 
         /// <inheritdoc/>
@@ -59,6 +60,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             RemoveUserScripts();
 
             ExitFullscreen();
+            platformView.SetDownloadListener(null);
             Advanced?.BridgeCore.Reset();
             base.DisconnectHandler(platformView);
             ForgetClients();

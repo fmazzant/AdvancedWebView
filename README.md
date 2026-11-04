@@ -67,6 +67,7 @@ WebView.ClearCache();
 | `IsInspectable` | `false` | ✔ | ✔ | Debug with Chrome DevTools / Safari Web Inspector; iOS 16.4 or later. See [Debugging the page](#debugging-the-page) |
 | `FullscreenEnabled` | `true` | ✔ | ✔ | Fullscreen video and `element.requestFullscreen`. See [Fullscreen](#fullscreen) |
 | `PermissionRequestBehavior` | `AskUser` | ✔ | ✔ | Camera, microphone and location asked by the page: `AskUser`, `Grant`, `Deny`. See [Permissions](#permissions) |
+| `DownloadBehavior` | `Event` | ✔ | ✔ | `Event`, `SystemDownloadManager` (Android), `Ignore`. See [Downloads](#downloads) |
 
 ### File upload
 
@@ -92,6 +93,32 @@ Manifest and Info.plist entries for the camera and the photo library:
 |---|---|
 | Android | `<uses-permission android:name="android.permission.CAMERA" />`, and `<queries>` with the `android.media.action.IMAGE_CAPTURE` and `VIDEO_CAPTURE` intents (needed by `MediaPicker` on Android 11 or later) |
 | iOS | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` (for videos) |
+
+### Downloads
+
+A download starts in several ways:
+
+- a link to a file the web view cannot show, for example a ZIP;
+- an answer with `Content-Disposition: attachment`;
+- a link with the `download` attribute, also to `blob:` and `data:` URLs.
+
+```csharp
+webView.DownloadBehavior = DownloadBehavior.Event; // default; SystemDownloadManager (Android), Ignore
+
+webView.DownloadRequested += async (s, e) =>
+{
+    // e.Url, e.SuggestedFileName, e.MimeType, e.ContentLength
+    var path = Path.Combine(FileSystem.CacheDirectory, e.SuggestedFileName);
+    await e.SaveToAsync(path, new Progress<double>(p => DownloadProgress = p));
+};
+```
+
+- `SaveToAsync` downloads with the web view's cookies (HttpOnly ones too) and user agent, so files behind a login work.
+  - For `blob:` URLs it reads the blob from the page through the bridge, so the page must not revoke the blob URL right after the click.
+  - For `data:` URLs it decodes the data.
+  - If the download fails or is cancelled, the partial file is deleted.
+- `SystemDownloadManager` (Android): when the handler does not call `SaveToAsync` (or set `e.Cancel`), Android's download manager saves the file to the public Downloads folder and shows a notification. It handles http and https only. Android 9 and earlier need `WRITE_EXTERNAL_STORAGE`. On iOS it behaves like `Event`.
+- Before, Android ignored downloads, and on iOS a file WebKit could not show made the navigation fail. A PDF without `Content-Disposition: attachment` is still shown in the page on iOS, as in Safari.
 
 ### Permissions
 
@@ -387,7 +414,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

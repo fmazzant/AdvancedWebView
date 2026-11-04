@@ -15,6 +15,7 @@ The platform capabilities release.
 - **Fullscreen:** `FullscreenEnabled`, `IsFullscreen` and the `FullscreenChanged` event. Android: the back button leaves fullscreen. iOS 16.4 or later: the HTML fullscreen API (`element.requestFullscreen`) is enabled.
 - **File upload (Android):** `<input type="file" multiple>` returns every chosen file, and `capture` opens the camera (MAUI `FilePicker` and `MediaPicker`). `FileChooserRequested` lets the app show its own picker.
 - **Web permissions:** `PermissionRequestBehavior` (`AskUser`, `Grant`, `Deny`) and the `PermissionRequested` event (`Origin`, `Permissions`, `Decision`, `GetDeferral()`) for the camera, the microphone and (Android) the location. Before, Android always refused them.
+- **Downloads:** `DownloadBehavior` (`Event`, `SystemDownloadManager` on Android, `Ignore`) and the `DownloadRequested` event (`Url`, `SuggestedFileName`, `MimeType`, `ContentLength`, `Cancel`, `SaveToAsync(path, progress)`). Files are downloaded with the web view's cookies and user agent; `blob:` and `data:` URLs are supported.
 
 ## [1.2.0] - Unreleased
 

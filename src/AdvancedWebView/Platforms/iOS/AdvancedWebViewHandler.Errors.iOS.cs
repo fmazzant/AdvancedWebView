@@ -73,6 +73,16 @@ namespace Mafesoft.Maui.Controls.Handlers
                     return;
                 }
 
+                // A file WebKit cannot show, or an attachment: DownloadRequested instead of a failed navigation.
+                if (navigationResponse.Response is not NSHttpUrlResponse { StatusCode: >= 400 } &&
+                    Owner is { } downloader && downloader.TryStartDownload(navigationResponse))
+                {
+                    if (navigationResponse.IsForMainFrame)
+                        downloader.ignoreNextInterruptedLoad = true;
+                    decisionHandler(WKNavigationResponsePolicy.Cancel);
+                    return;
+                }
+
                 decisionHandler(WKNavigationResponsePolicy.Allow);
             }
 
