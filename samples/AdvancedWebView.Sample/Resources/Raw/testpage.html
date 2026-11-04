@@ -29,6 +29,14 @@
   <p>Camera: <input type="file" class="upload" accept="image/*" capture="environment"></p>
   <p id="uploadResult"></p>
 
+  <h3>Permissions</h3>
+  <button id="btnCamera">getUserMedia (camera + microphone)</button>
+  <video id="preview" autoplay playsinline muted width="100%" style="display:none"></video>
+  <button id="btnLocation">navigator.geolocation</button>
+  <p id="permResult"></p>
+  <p>If this local page is not a secure context, try
+    <a href="https://webrtc.github.io/samples/src/content/getusermedia/gum/">the WebRTC getUserMedia demo</a>.</p>
+
   <h3>Fullscreen</h3>
   <video controls playsinline width="100%"
          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
@@ -94,6 +102,31 @@
         document.getElementById("uploadResult").textContent = files.length ? files.join(", ") : "No file chosen";
       };
     });
+
+    // PermissionRequested decides; a Deny makes these fail with NotAllowedError / PERMISSION_DENIED.
+    var permResult = document.getElementById("permResult");
+    document.getElementById("btnCamera").onclick = function () {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        permResult.textContent = "getUserMedia not available (secure context: " + window.isSecureContext + ")";
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(function (stream) {
+        var preview = document.getElementById("preview");
+        preview.srcObject = stream;
+        preview.style.display = "block";
+        permResult.textContent = "Camera and microphone granted";
+      }, function (e) {
+        permResult.textContent = "getUserMedia failed: " + e.name + " " + e.message;
+      });
+    };
+    document.getElementById("btnLocation").onclick = function () {
+      if (!navigator.geolocation) { permResult.textContent = "Geolocation not available"; return; }
+      navigator.geolocation.getCurrentPosition(function (p) {
+        permResult.textContent = "Location: " + p.coords.latitude.toFixed(4) + ", " + p.coords.longitude.toFixed(4);
+      }, function (e) {
+        permResult.textContent = "Geolocation failed: " + e.code + " " + e.message;
+      }, { timeout: 15000 });
+    };
 
     // FullscreenEnabled = false makes this fail; FullscreenChanged reports enter/exit.
     document.getElementById("btnFullscreen").onclick = function () {

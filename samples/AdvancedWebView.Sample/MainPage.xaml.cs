@@ -17,7 +17,30 @@ public partial class MainPage : ContentPage
 		CacheModePicker.SelectedIndex = (int)WebView.CacheMode;
 		NewWindowPicker.ItemsSource = Enum.GetNames<NewWindowAction>();
 		NewWindowPicker.SelectedIndex = (int)WebView.NewWindowBehavior;
+		PermissionPicker.ItemsSource = Enum.GetNames<PermissionDecision>();
+		PermissionPicker.SelectedIndex = (int)WebView.PermissionRequestBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+	}
+
+	void OnPermissionBehaviorChanged(object? sender, EventArgs e)
+	{
+		if (PermissionPicker.SelectedIndex >= 0)
+			WebView.PermissionRequestBehavior = (PermissionDecision)PermissionPicker.SelectedIndex;
+	}
+
+	// getUserMedia and geolocation. With "Ask in app" on, the app asks the user, per site, with its own dialog:
+	// the deferral keeps the page waiting until the dialog is closed.
+	async void OnPermissionRequested(object? sender, PermissionRequestedEventArgs e)
+	{
+		var site = e.Origin?.Host ?? "This page";
+		Log($"Permission ({e.Decision}): {e.Permissions} for {site}");
+
+		if (!AskInAppSwitch.IsToggled)
+			return;
+
+		using var deferral = e.GetDeferral();
+		var allow = await DisplayAlertAsync("Permission", $"{site} wants to use: {e.Permissions}", "Allow", "Deny");
+		e.Decision = allow ? PermissionDecision.Grant : PermissionDecision.Deny;
 	}
 
 	// Android only. Not handled here: AdvancedWebView shows the system picker. Set e.Handled and call e.SetResult for your own.

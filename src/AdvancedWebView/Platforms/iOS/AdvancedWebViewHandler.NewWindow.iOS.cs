@@ -66,6 +66,15 @@ namespace Mafesoft.Maui.Controls.Handlers
             public AdvancedUIDelegate(AdvancedWebViewHandler handler) : base(handler) =>
                 this.handler = new WeakReference<AdvancedWebViewHandler>(handler);
 
+            // getUserMedia: PermissionRequested decides between WebKit's dialog (Prompt), Grant and Deny.
+            public override void RequestMediaCapturePermission(WKWebView webView, WKSecurityOrigin origin, WKFrameInfo frame, WKMediaCaptureType type, Action<WKPermissionDecision> decisionHandler)
+            {
+                if (handler.TryGetTarget(out var owner))
+                    owner.RequestMediaCapturePermission(origin, type, decisionHandler);
+                else
+                    decisionHandler(WKPermissionDecision.Prompt);
+            }
+
             // window.open: returning null tells WebKit that no window was created.
             public override WKWebView? CreateWebView(WKWebView webView, WKWebViewConfiguration configuration, WKNavigationAction navigationAction, WKWindowFeatures windowFeatures)
             {

@@ -89,17 +89,6 @@ namespace Mafesoft.Maui.Controls.Handlers
                     frame.MainFrame,
                     reply);
             }
-
-            static Uri? ToUri(WKSecurityOrigin? origin)
-            {
-                if (origin is null || string.IsNullOrEmpty(origin.Protocol) || string.IsNullOrEmpty(origin.Host))
-                    return null;
-
-                var builder = new UriBuilder(origin.Protocol, origin.Host);
-                if (origin.Port > 0)
-                    builder.Port = (int)origin.Port;
-                return builder.Uri;
-            }
         }
     }
 }

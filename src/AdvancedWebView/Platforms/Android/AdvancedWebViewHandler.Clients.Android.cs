@@ -253,6 +253,21 @@ namespace Mafesoft.Maui.Controls.Handlers
                 return base.OnShowFileChooser(webView, filePathCallback, fileChooserParams);
             }
 
+            // Camera and microphone (getUserMedia) and location: PermissionRequested and the OS permissions.
+            public override void OnPermissionRequest(PermissionRequest? request)
+            {
+                if (request is null || !handler.TryGetTarget(out var owner) || !owner.OnPermissionRequest(request))
+                    base.OnPermissionRequest(request);
+            }
+
+            public override void OnGeolocationPermissionsShowPrompt(string? origin, GeolocationPermissions.ICallback? callback)
+            {
+                if (handler.TryGetTarget(out var owner))
+                    owner.OnGeolocationPermissionsShowPrompt(origin, callback);
+                else
+                    base.OnGeolocationPermissionsShowPrompt(origin, callback);
+            }
+
             // Fullscreen video / element.requestFullscreen. MAUI's base shows the view over the activity and hides
             // the system bars; AdvancedWebView adds FullscreenEnabled, the back button and FullscreenChanged.
             public override void OnShowCustomView(Android.Views.View? view, ICustomViewCallback? callback)
