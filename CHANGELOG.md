@@ -13,6 +13,7 @@ The platform capabilities release.
 
 - **`IsInspectable`:** debug the page with Chrome DevTools (Android) or the Safari Web Inspector (iOS 16.4 or later).
 - **Fullscreen:** `FullscreenEnabled`, `IsFullscreen` and the `FullscreenChanged` event. Android: the back button leaves fullscreen. iOS 16.4 or later: the HTML fullscreen API (`element.requestFullscreen`) is enabled.
+- **File upload (Android):** `<input type="file" multiple>` returns every chosen file, and `capture` opens the camera (MAUI `FilePicker` and `MediaPicker`). `FileChooserRequested` lets the app show its own picker.
 
 ## [1.2.0] - Unreleased
 

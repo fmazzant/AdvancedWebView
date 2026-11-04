@@ -67,6 +67,31 @@ WebView.ClearCache();
 | `IsInspectable` | `false` | ✔ | ✔ | Debug with Chrome DevTools / Safari Web Inspector; iOS 16.4 or later. See [Debugging the page](#debugging-the-page) |
 | `FullscreenEnabled` | `true` | ✔ | ✔ | Fullscreen video and `element.requestFullscreen`. See [Fullscreen](#fullscreen) |
 
+### File upload
+
+`<input type="file">` works on both platforms, with `accept`, `multiple` and `capture`:
+
+- **Android:** MAUI's picker handles a single file. For `multiple` and `capture`, AdvancedWebView uses MAUI `FilePicker` and `MediaPicker` instead. MAUI's own picker returns only one file and ignores `capture`. Handle `FileChooserRequested` to show your own picker:
+
+  ```csharp
+  webView.FileChooserRequested += async (s, e) =>
+  {
+      // e.AcceptTypes, e.AllowsMultiple, e.IsCaptureEnabled
+      e.Handled = true; // before the first await
+      var photo = await MediaPicker.Default.CapturePhotoAsync();
+      e.SetResult(photo is null ? null : [photo.FullPath]); // always call it, null when cancelled
+  };
+  ```
+
+- **iOS:** WKWebView shows the system picker (photo library, camera, files), which already supports `accept`, `multiple` and `capture`. `FileChooserRequested` is not raised.
+
+Manifest and Info.plist entries for the camera and the photo library:
+
+| Platform | Entries |
+|---|---|
+| Android | `<uses-permission android:name="android.permission.CAMERA" />`, and `<queries>` with the `android.media.action.IMAGE_CAPTURE` and `VIDEO_CAPTURE` intents (needed by `MediaPicker` on Android 11 or later) |
+| iOS | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` (for videos) |
+
 ### Fullscreen
 
 ```csharp
@@ -327,7 +352,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), switches for the properties (including `IsInspectable` and `FullscreenEnabled`), cache mode and new-window pickers, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, file upload (single, multiple, PDF only, camera), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

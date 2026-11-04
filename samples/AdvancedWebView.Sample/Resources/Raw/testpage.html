@@ -22,6 +22,13 @@
   <p id="confirmResult"></p>
   <p><a href="https://learn.microsoft.com/dotnet/maui/" target="_blank">Link with target="_blank"</a></p>
 
+  <h3>File upload</h3>
+  <p>Single file: <input type="file" class="upload"></p>
+  <p>Multiple images: <input type="file" class="upload" accept="image/*" multiple></p>
+  <p>PDF only: <input type="file" class="upload" accept=".pdf,application/pdf"></p>
+  <p>Camera: <input type="file" class="upload" accept="image/*" capture="environment"></p>
+  <p id="uploadResult"></p>
+
   <h3>Fullscreen</h3>
   <video controls playsinline width="100%"
          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
@@ -79,6 +86,14 @@
     document.getElementById("btnOpenNoGesture").onclick = function () {
       setTimeout(function () { window.open("https://dotnet.microsoft.com", "_blank"); }, 1500);
     };
+
+    // Shows what the page received: name, size and type of each chosen file.
+    Array.prototype.forEach.call(document.querySelectorAll("input.upload"), function (input) {
+      input.onchange = function () {
+        var files = Array.prototype.map.call(input.files, function (f) { return f.name + " (" + f.size + " bytes, " + (f.type || "?") + ")"; });
+        document.getElementById("uploadResult").textContent = files.length ? files.join(", ") : "No file chosen";
+      };
+    });
 
     // FullscreenEnabled = false makes this fail; FullscreenChanged reports enter/exit.
     document.getElementById("btnFullscreen").onclick = function () {

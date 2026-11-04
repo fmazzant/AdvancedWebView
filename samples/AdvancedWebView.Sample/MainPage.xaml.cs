@@ -20,6 +20,10 @@ public partial class MainPage : ContentPage
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
 	}
 
+	// Android only. Not handled here: AdvancedWebView shows the system picker. Set e.Handled and call e.SetResult for your own.
+	void OnFileChooserRequested(object? sender, FileChooserRequestedEventArgs e) =>
+		Log($"File picker: accept [{string.Join(", ", e.AcceptTypes)}], multiple: {e.AllowsMultiple}, capture: {e.IsCaptureEnabled}");
+
 	// Hide the app's bars while a video is fullscreen. On Android the back button leaves fullscreen.
 	void OnFullscreenChanged(object? sender, FullscreenChangedEventArgs e)
 	{
