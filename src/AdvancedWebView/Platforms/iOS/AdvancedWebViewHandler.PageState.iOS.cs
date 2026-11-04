@@ -22,7 +22,12 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             // Element fullscreen (iOS 16+). The native video player's fullscreen is not reported by WebKit.
             if (OperatingSystem.IsIOSVersionAtLeast(16))
-                Observe(platformView, "fullscreenState", (view, web) => view.SetFullscreen(web.FullscreenState == WKFullscreenState.InFullscreen));
+                Observe(platformView, "fullscreenState", (view, web) =>
+                {
+                    // Repeated inside the callback: the analyzer does not carry the check above into the lambda.
+                    if (OperatingSystem.IsIOSVersionAtLeast(16))
+                        view.SetFullscreen(web.FullscreenState == WKFullscreenState.InFullscreen);
+                });
         }
 
         void Observe(WKWebView platformView, string keyPath, Action<AdvancedWebView, WKWebView> update)

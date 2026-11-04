@@ -3,13 +3,14 @@
 [![Build](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml/badge.svg)](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml)
 [![NuGet](https://img.shields.io/nuget/v/Mafesoft.Maui.AdvancedWebView.svg)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
 
-AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android and iOS). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
+AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS and Mac Catalyst). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
 
 ## Requirements
 
 - .NET 10
 - Android 5.0 (API 21) or later
 - iOS 15 or later
+- Mac Catalyst 15 (macOS 12) or later
 
 ## Installation
 
@@ -26,6 +27,17 @@ builder
     .UseMauiApp<App>()
     .UseAdvancedWebView();
 ```
+
+### Mac Catalyst
+
+Mac Catalyst uses the same `WKWebView` code as iOS: everything this page says about iOS applies to the Mac too, including the version notes (Mac Catalyst follows the iOS version numbers: Mac Catalyst 16.4 is macOS 13.3). The differences:
+
+- **Sandbox entitlements.** Mac apps run in the App Sandbox, so each capability needs an entry in `Platforms/MacCatalyst/Entitlements.plist`: `com.apple.security.network.client` to load web pages, `com.apple.security.device.camera` and `com.apple.security.device.audio-input` for `getUserMedia`, `com.apple.security.personal-information.location` for `navigator.geolocation`, and `com.apple.security.files.user-selected.read-write` (file upload) or `com.apple.security.files.downloads.read-write` (saving downloads to the Downloads folder).
+- **File upload** shows the macOS open panel. `capture` has no effect.
+- **Zoom** is the trackpad pinch; `ZoomEnabled = false` turns it off.
+- **Debugging:** with `IsInspectable` on, the page appears directly in the *Develop* menu of Safari on the same Mac.
+
+The Info.plist usage descriptions listed below for iOS are needed on the Mac too.
 
 ## Usage
 
@@ -115,6 +127,7 @@ Manifest and Info.plist entries for the camera and the photo library:
 |---|---|
 | Android | `<uses-permission android:name="android.permission.CAMERA" />`, and `<queries>` with the `android.media.action.IMAGE_CAPTURE` and `VIDEO_CAPTURE` intents (needed by `MediaPicker` on Android 11 or later) |
 | iOS | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` (for videos) |
+| Mac Catalyst | As iOS, plus the `com.apple.security.files.user-selected.read-write` entitlement |
 
 ### Downloads
 
@@ -175,6 +188,7 @@ Manifest and Info.plist entries:
 |---|---|
 | Android | `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION` |
 | iOS | `NSCameraUsageDescription`, `NSMicrophoneUsageDescription`, `NSLocationWhenInUseUsageDescription` |
+| Mac Catalyst | As iOS, plus the `com.apple.security.device.camera`, `com.apple.security.device.audio-input` and `com.apple.security.personal-information.location` entitlements |
 
 ### Fullscreen
 
@@ -467,6 +481,7 @@ webView.IsInspectable = true;
 
 ```shell
 dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-android
+dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-maccatalyst  # on a Mac
 ```
 
 ## Tests
