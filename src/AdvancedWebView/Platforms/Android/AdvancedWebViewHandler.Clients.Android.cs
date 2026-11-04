@@ -47,20 +47,37 @@ namespace Mafesoft.Maui.Controls.Handlers
                 NavigateInView(url);
         }
 
+        // LoadUrl / PostUrlAsync. PostUrl sends the body as application/x-www-form-urlencoded, without extra headers
+        // (checked by PostUrlAsync before getting here).
+        internal partial void LoadRequest(WebRequest request) =>
+            NavigateInView(request.Url, request.Body is { } body
+                ? webView => webView.PostUrl(request.Url, body)
+                : webView => webView.LoadUrl(request.Url, new Dictionary<string, string>(request.Headers)));
+
         /// <summary>
-        /// Loads a URL the app decided to open (new window in the same view, intent fallback) with the checks of a
-        /// normal navigation. LoadUrl skips ShouldOverrideUrlLoading, where MAUI raises Navigating.
+        /// Loads a URL from code (new window in the same view, intent fallback, LoadUrl/PostUrlAsync) with the checks of
+        /// a link: Navigating first, then the external-link rules. <paramref name="load"/> defaults to a plain LoadUrl.
         /// </summary>
-        void NavigateInView(string url)
+        void NavigateInView(string url, Action<AWebView>? load = null)
         {
             if (PlatformView is not { } webView || Advanced is not { } view)
                 return;
 
-            if (((IWebView)view).Navigating(WebNavigationEvent.NewPage, url))
-                return; // cancelled by the app
+            // MAUI's own check: raises Navigating and, when not cancelled, marks the URL so that OnPageStarted
+            // does not raise Navigating a second time.
+            if (NavigatingCanceled(url))
+                return;
 
-            if (!view.TryOpenExternalLink(url, isMainFrame: true, OpenExternal))
+            if (view.TryOpenExternalLink(url, isMainFrame: true, OpenExternal))
+            {
+                UrlCanceled = null; // no page load follows to clear the mark
+                return;
+            }
+
+            if (load is null)
                 webView.LoadUrl(url);
+            else
+                load(webView);
         }
 
         /// <summary>Opens an external URL: intent:// with Android's own parser, anything else with the shared Launcher code.</summary>
