@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdvancedWebView test page</title>
+  <style>
+    body { font-family: -apple-system, Roboto, sans-serif; padding: 16px; line-height: 1.5; }
+    button { display: block; width: 100%; margin: 8px 0; padding: 12px; font-size: 16px; }
+    #status { padding: 8px; border-radius: 6px; background: #fdecea; color: #b3261e; }
+    .filler { height: 600px; background: linear-gradient(#eee, #ccc); margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h2>AdvancedWebView test page</h2>
+
+  <!-- Replaced by the script below when JavaScript is enabled. -->
+  <p id="status">JavaScript is disabled.</p>
+
+  <button id="btnAlert">alert()</button>
+  <button id="btnConfirm">confirm()</button>
+  <p id="confirmResult"></p>
+  <button id="btnOpen">window.open() on tap</button>
+  <button id="btnOpenNoGesture">window.open() without user gesture</button>
+
+  <p>Scroll past the end of the page to test <code>ScrollBouncesEnabled</code>.</p>
+  <div class="filler"></div>
+
+  <script>
+    var status = document.getElementById("status");
+    status.textContent = "JavaScript is enabled.";
+    status.style.background = "#e6f4ea";
+    status.style.color = "#137333";
+
+    document.getElementById("btnAlert").onclick = function () {
+      alert("Hello from JavaScript");
+    };
+    document.getElementById("btnConfirm").onclick = function () {
+      document.getElementById("confirmResult").textContent = confirm("Continue?") ? "Confirmed" : "Cancelled";
+    };
+    document.getElementById("btnOpen").onclick = function () {
+      window.open("https://dotnet.microsoft.com", "_blank");
+    };
+    document.getElementById("btnOpenNoGesture").onclick = function () {
+      setTimeout(function () { window.open("https://dotnet.microsoft.com", "_blank"); }, 1500);
+    };
+  </script>
+</body>
+</html>

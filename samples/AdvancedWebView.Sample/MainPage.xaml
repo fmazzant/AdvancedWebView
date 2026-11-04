@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:awv="clr-namespace:Mafesoft.Maui.Controls;assembly=Mafesoft.Maui.AdvancedWebView"
+             x:Class="AdvancedWebViewSample.MainPage"
+             Title="AdvancedWebView">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Address bar -->
+        <Grid Grid.Row="0" Padding="8" ColumnSpacing="4" ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+            <Button Grid.Column="0" Text="&lt;" WidthRequest="44" Clicked="OnBackClicked" />
+            <Button Grid.Column="1" Text="&gt;" WidthRequest="44" Clicked="OnForwardClicked" />
+            <Button Grid.Column="2" Text="R" WidthRequest="44" Clicked="OnReloadClicked" />
+            <Entry Grid.Column="3" x:Name="UrlEntry" Keyboard="Url" Placeholder="https://"
+                   ReturnType="Go" Completed="OnGoClicked" />
+            <Button Grid.Column="4" Text="Go" Clicked="OnGoClicked" />
+        </Grid>
+
+        <!-- Settings. On iOS, JavaScript and Popups apply only when the native view is created. -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" Padding="8,0">
+            <HorizontalStackLayout Spacing="12">
+                <HorizontalStackLayout>
+                    <Label Text="JavaScript" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding JavaScriptEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Popups" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding JavaScriptCanOpenWindowsAutomatically, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Bounce" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding ScrollBouncesEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Mixed content" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding AllowMixedContent, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <Picker x:Name="CacheModePicker" Title="Cache" WidthRequest="160"
+                        SelectedIndexChanged="OnCacheModeChanged" />
+                <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
+                <Button Text="Test page" Clicked="OnTestPageClicked" />
+                <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <awv:AdvancedWebView
+            Grid.Row="2"
+            x:Name="WebView"
+            Source="https://dotnet.microsoft.com"
+            Navigating="OnNavigating"
+            Navigated="OnNavigated" />
+
+        <!-- Event log: last three navigation events -->
+        <Label Grid.Row="3" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
+    </Grid>
+
+</ContentPage>

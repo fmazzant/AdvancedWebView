@@ -72,6 +72,14 @@ Inherited from the MAUI `WebView`: `Source`, `UserAgent`, `Cookies`, `Navigating
 |---|---|
 | `ClearCache()` | Clears the HTTP cache (memory and disk). Cookies and local storage are kept. |
 
+## Sample app
+
+[`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) is a small browser that shows every feature: switches for the properties, cache mode picker, `ClearCache()`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()` and `window.open()`.
+
+```shell
+dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-android
+```
+
 ## License
 
 [MIT](LICENSE)
