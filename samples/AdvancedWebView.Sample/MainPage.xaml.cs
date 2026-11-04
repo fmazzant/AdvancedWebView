@@ -34,6 +34,38 @@ public partial class MainPage : ContentPage
 	void OnExternalLinkOpening(object? sender, ExternalLinkOpeningEventArgs e) =>
 		Log($"Opening outside the app ({e.Reason}): {e.Url}");
 
+	// Shown instead of the platform's error page when the switch is on. Placeholders are HTML-encoded.
+	const string ErrorPage = """
+		<!DOCTYPE html>
+		<html>
+		<head>
+		  <meta name="viewport" content="width=device-width, initial-scale=1">
+		  <style>
+		    body { font-family: -apple-system, Roboto, sans-serif; padding: 24px; text-align: center; }
+		    button { padding: 12px 24px; font-size: 16px; }
+		    code { word-break: break-all; }
+		  </style>
+		</head>
+		<body>
+		  <h1>Page not available</h1>
+		  <p><b>{{error}}</b> {{statusCode}}</p>
+		  <p>{{description}}</p>
+		  <p><code>{{url}}</code></p>
+		  <button onclick="AdvancedWebView.retry()">Retry</button>
+		</body>
+		</html>
+		""";
+
+	void OnErrorPageToggled(object? sender, ToggledEventArgs e) =>
+		WebView.ErrorPageHtml = e.Value ? ErrorPage : null;
+
+	void OnNavigationFailed(object? sender, NavigationFailedEventArgs e) =>
+		Log($"Failed ({e.Error}{(e.HttpStatusCode is { } code ? $" {code}" : "")}): {e.Url} - {e.Description}");
+
+	// Rejected (the default): a real app should accept a certificate only for its own development server.
+	void OnServerCertificateError(object? sender, ServerCertificateErrorEventArgs e) =>
+		Log($"Certificate rejected: {e.Url} - {e.Description}");
+
 	void OnInternalHostsToggled(object? sender, ToggledEventArgs e)
 	{
 		WebView.InternalHosts = e.Value ? ["microsoft.com", "*.microsoft.com"] : [];

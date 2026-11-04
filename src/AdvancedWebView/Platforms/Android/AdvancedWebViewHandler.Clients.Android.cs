@@ -25,6 +25,22 @@ namespace Mafesoft.Maui.Controls.Handlers
             handler.PlatformView.SetWebChromeClient(handler.webChromeClient ??= new AdvancedWebChromeClient(handler));
         }
 
+        // Same base URL as MAUI's HtmlWebViewSource: the error page is local content and can use the bridge (retry()).
+        const string ErrorPageBaseUrl = "file:///android_asset/";
+
+        /// <summary>Raises NavigationFailed for the top-level page and shows ErrorPageHtml when requested.</summary>
+        void ReportFailure(AWebView? webView, string? url, WebNavigationError error, int? httpStatusCode, string? description)
+        {
+            if (webView is null || Advanced is not { } view || !AdvancedWebView.IsReportableUrl(url) || url!.StartsWith(ErrorPageBaseUrl, StringComparison.Ordinal))
+                return;
+
+            if (view.OnNavigationFailed(url, error, httpStatusCode, description) is { } html)
+            {
+                // Posted: loading from inside a WebViewClient callback can be ignored. The history entry keeps the failed URL.
+                webView.Post(() => webView.LoadDataWithBaseURL(ErrorPageBaseUrl, html, "text/html", "utf-8", url));
+            }
+        }
+
         void OpenNewWindow(string url, bool isUserGesture)
         {
             if (Advanced is { } view && view.OnNewWindowRequested(url, isUserGesture))
@@ -124,7 +140,48 @@ namespace Mafesoft.Maui.Controls.Handlers
             public override void OnPageStarted(AWebView? view, string? url, Bitmap? favicon)
             {
                 base.OnPageStarted(view, url, favicon);
+                mainFrameUrl = url;
                 View?.OnLoadStarted(url);
+            }
+
+            // URL of the current top-level load: tells certificate errors of the page from those of its resources.
+            string? mainFrameUrl;
+
+            public override void OnReceivedError(AWebView? view, IWebResourceRequest? request, WebResourceError? error)
+            {
+                base.OnReceivedError(view, request, error); // MAUI: Navigated with a failure result
+                if (request?.IsForMainFrame == true && handler.TryGetTarget(out var owner))
+                {
+                    var description = error?.Description;
+                    owner.ReportFailure(view, request.Url?.ToString(),
+                        NavigationErrors.FromAndroid((int)(error?.ErrorCode ?? ClientError.Unknown), description), null, description);
+                }
+            }
+
+            public override void OnReceivedHttpError(AWebView? view, IWebResourceRequest? request, WebResourceResponse? errorResponse)
+            {
+                base.OnReceivedHttpError(view, request, errorResponse);
+                if (request?.IsForMainFrame == true && errorResponse?.StatusCode >= 400 && handler.TryGetTarget(out var owner))
+                    owner.ReportFailure(view, request.Url?.ToString(), WebNavigationError.HttpError, errorResponse.StatusCode, errorResponse.ReasonPhrase);
+            }
+
+            // Not calling base: its default is to cancel, which is our default too, but the app decides first.
+            public override void OnReceivedSslError(AWebView? view, SslErrorHandler? sslHandler, Android.Net.Http.SslError? error)
+            {
+                var url = error?.Url ?? view?.Url ?? string.Empty;
+                var description = error is null ? "Invalid certificate" : $"Certificate error: {error.PrimaryError}";
+
+                if (View?.OnServerCertificateError(url, description) == true)
+                {
+                    sslHandler?.Proceed();
+                    return;
+                }
+
+                sslHandler?.Cancel();
+
+                // Android reports a cancelled certificate only here, not in OnReceivedError.
+                if (url == mainFrameUrl && handler.TryGetTarget(out var owner))
+                    owner.ReportFailure(view, url, WebNavigationError.SslError, null, description);
             }
 
             public override void OnPageFinished(AWebView? view, string? url)

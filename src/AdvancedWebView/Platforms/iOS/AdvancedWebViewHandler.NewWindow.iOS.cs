@@ -28,7 +28,8 @@ namespace Mafesoft.Maui.Controls.Handlers
                 webView.LoadRequest(action.Request);
         }
 
-        sealed class AdvancedNavigationDelegate : MauiWebViewNavigationDelegate
+        // Other part: AdvancedWebViewHandler.Errors.iOS.cs (load failures, HTTP errors, certificates).
+        sealed partial class AdvancedNavigationDelegate : MauiWebViewNavigationDelegate
         {
             readonly WeakReference<AdvancedWebViewHandler> handler;
 
