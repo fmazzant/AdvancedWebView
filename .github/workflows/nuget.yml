@@ -1,32 +1,31 @@
-# name: Publish AdvancedWebView on NuGet
- 
-# on:
-#   push:
-#     branches: [ main ]
-#     paths: [ 'src/**' ]
-#   workflow_dispatch:
-  
-# jobs:
-#   build:
+name: Publish to NuGet
 
-#     runs-on: ubuntu-latest
+# Runs when a tag such as v1.2.3 is pushed. The tag sets the package version.
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
 
-#     steps:
-#     - uses: actions/checkout@v3
-#     - name: Setup .NET
-#       uses: actions/setup-dotnet@v2
-#       with:
-#         dotnet-version: 8.0.x
-        
-#     - name: Restore dependencies
-#       run: dotnet restore src/TinyCsv/TinyCsv.csproj 
-      
-#     - name: Build
-#       run: dotnet build --no-restore src/TinyCsv/TinyCsv.csproj 
-        
-#     - name: Package
-#       run: dotnet pack -c Release -o . src/TinyCsv/TinyCsv.csproj 
-      
-#     - name: Publish on NuGet
-#       run: dotnet nuget push ./*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-    
+jobs:
+  publish:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Pack
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then VERSION=""; fi
+          dotnet pack src/AdvancedWebView/AdvancedWebView.csproj -c Release -o artifacts ${VERSION:+-p:Version=$VERSION}
+
+      - name: Publish on NuGet
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -1,9 +1,17 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
 
-/.vs
-/src/.vs/AdvancedWebView
-/src/AdvancedWebView/bin/Debug
-/src/AdvancedWebView/obj
-/src/.vs/ProjectEvaluation
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+*.nupkg
+*.snupkg
+
+# OS
+.DS_Store
+Thumbs.db
