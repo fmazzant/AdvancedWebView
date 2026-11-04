@@ -54,6 +54,34 @@
                     <Label Text="Inspectable" VerticalOptions="Center" />
                     <Switch IsToggled="{Binding IsInspectable, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
                 </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Zoom" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding ZoomEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Text selection" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding TextSelectionEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Transparent" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding IsTransparent, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Link preview (iOS)" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding LinkPreviewEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Darkening (Android)" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding AlgorithmicDarkening, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <Picker x:Name="ColorSchemePicker" Title="Color scheme (iOS)" WidthRequest="170"
+                        SelectedIndexChanged="OnColorSchemeChanged" />
+                <HorizontalStackLayout Spacing="4">
+                    <Label Text="{Binding TextZoom, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView, StringFormat='Text {0}%'}"
+                           VerticalOptions="Center" />
+                    <Stepper Minimum="50" Maximum="200" Increment="10"
+                             Value="{Binding TextZoom, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
                 <Picker x:Name="CacheModePicker" Title="Cache" WidthRequest="160"
                         SelectedIndexChanged="OnCacheModeChanged" />
                 <Picker x:Name="NewWindowPicker" Title="New windows" WidthRequest="170"
@@ -79,11 +107,16 @@
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
                 <Button Text="Headers" Clicked="OnLoadWithHeadersClicked" />
                 <Button Text="POST" Clicked="OnPostClicked" />
+                <Button Text="Set cookie" Clicked="OnSetCookieClicked" />
+                <Button Text="Cookies" Clicked="OnShowCookiesClicked" />
+                <Button Text="HttpClient" Clicked="OnHttpClientClicked" />
+                <Button Text="Clear data" Clicked="OnClearDataClicked" />
             </HorizontalStackLayout>
         </ScrollView>
 
+        <!-- Pull to refresh: MAUI's RefreshView works around the web view; it triggers only at the top of the page. -->
+        <RefreshView Grid.Row="3" x:Name="Refresh" Refreshing="OnPullToRefresh">
         <awv:AdvancedWebView
-            Grid.Row="3"
             x:Name="WebView"
             Source="https://dotnet.microsoft.com"
             Navigating="OnNavigating"
@@ -96,6 +129,7 @@
             PermissionRequested="OnPermissionRequested"
             DownloadRequested="OnDownloadRequested"
             ServerCertificateError="OnServerCertificateError" />
+        </RefreshView>
 
         <!-- Event log: last three navigation events -->
         <Label Grid.Row="4" x:Name="LogLabel" Padding="8" FontSize="12" MaxLines="3" />
