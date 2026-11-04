@@ -52,6 +52,13 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         static void MapCacheMode(AdvancedWebViewHandler handler, AdvancedWebView view) { }
 
+        // WKWebView.inspectable exists from iOS 16.4; earlier versions allow inspecting debug builds only.
+        static void MapIsInspectable(AdvancedWebViewHandler handler, AdvancedWebView view)
+        {
+            if (OperatingSystem.IsIOSVersionAtLeast(16, 4))
+                handler.PlatformView.Inspectable = view.IsInspectable;
+        }
+
         static void MapClearCache(AdvancedWebViewHandler handler, AdvancedWebView view, object? args)
         {
             var dataTypes = new NSSet<NSString>(WKWebsiteDataType.DiskCache, WKWebsiteDataType.MemoryCache);

@@ -46,6 +46,10 @@
                     <Label Text="Mixed content" VerticalOptions="Center" />
                     <Switch IsToggled="{Binding AllowMixedContent, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
                 </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Inspectable" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding IsInspectable, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
                 <Picker x:Name="CacheModePicker" Title="Cache" WidthRequest="160"
                         SelectedIndexChanged="OnCacheModeChanged" />
                 <Picker x:Name="NewWindowPicker" Title="New windows" WidthRequest="170"
