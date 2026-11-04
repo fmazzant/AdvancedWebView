@@ -9,7 +9,7 @@
     /// <see cref="WebView.UserAgent"/>, <see cref="WebView.Cookies"/>, and the
     /// <see cref="WebView.Navigating"/> event (set <c>Cancel</c> to block a URL).
     /// </remarks>
-    public class AdvancedWebView : WebView
+    public partial class AdvancedWebView : WebView
     {
         /// <summary>Bindable property for <see cref="JavaScriptEnabled"/>.</summary>
         public static readonly BindableProperty JavaScriptEnabledProperty =

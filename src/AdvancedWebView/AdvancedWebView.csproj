@@ -42,4 +42,9 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.120" />
   </ItemGroup>
 
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <!-- WebViewCompat.addWebMessageListener / addDocumentStartJavaScript for the JS bridge -->
+    <PackageReference Include="Xamarin.AndroidX.WebKit" Version="1.14.0.1" />
+  </ItemGroup>
+
 </Project>
