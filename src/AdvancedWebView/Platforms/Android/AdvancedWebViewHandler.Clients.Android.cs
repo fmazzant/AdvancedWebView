@@ -243,6 +243,16 @@ namespace Mafesoft.Maui.Controls.Handlers
                 View?.SetTitle(title);
             }
 
+            // <input type="file">: FileChooserRequested, multiple files and capture; MAUI's picker for the simple case.
+            public override bool OnShowFileChooser(AWebView? webView, IValueCallback? filePathCallback, FileChooserParams? fileChooserParams)
+            {
+                if (filePathCallback is not null && fileChooserParams is not null &&
+                    handler.TryGetTarget(out var owner) && owner.ShowFileChooser(filePathCallback, fileChooserParams))
+                    return true;
+
+                return base.OnShowFileChooser(webView, filePathCallback, fileChooserParams);
+            }
+
             // Fullscreen video / element.requestFullscreen. MAUI's base shows the view over the activity and hides
             // the system bars; AdvancedWebView adds FullscreenEnabled, the back button and FullscreenChanged.
             public override void OnShowCustomView(Android.Views.View? view, ICustomViewCallback? callback)

@@ -84,6 +84,7 @@
             ExternalLinkOpening="OnExternalLinkOpening"
             NavigationFailed="OnNavigationFailed"
             FullscreenChanged="OnFullscreenChanged"
+            FileChooserRequested="OnFileChooserRequested"
             ServerCertificateError="OnServerCertificateError" />
 
         <!-- Event log: last three navigation events -->

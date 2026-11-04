@@ -26,6 +26,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- <input type="file">: the WKWebView picker offers the camera and the photo library. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos and videos to upload in web pages.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Record audio for videos uploaded in web pages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose photos to upload in web pages.</string>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>
