@@ -66,6 +66,9 @@ namespace Mafesoft.Maui.Controls.Handlers
             handler.ExecuteScript(view.DisplayScript());
         }
 
+        /// <summary>Captures the page (CaptureAsync). Must be called on the main thread.</summary>
+        internal partial Task<WebViewScreenshot> CapturePageAsync(WebCaptureArea area);
+
         /// <summary>Loads a request from LoadUrl/PostUrlAsync. Must be called on the main thread.</summary>
         internal partial void LoadRequest(WebRequest request);
 

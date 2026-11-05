@@ -7,6 +7,9 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
+		// Android: lets CaptureAsync(WebCaptureArea.FullPage) draw the whole page. Before the first web view is created.
+		AdvancedWebView.EnableFullPageCapture();
+
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()

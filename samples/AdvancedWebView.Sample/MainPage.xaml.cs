@@ -277,6 +277,43 @@ public partial class MainPage : ContentPage
 			WebView.CacheMode = (WebViewCacheMode)CacheModePicker.SelectedIndex;
 	}
 
+	void OnCaptureClicked(object? sender, EventArgs e) => CaptureAsync(WebCaptureArea.Viewport);
+
+	void OnCaptureFullPageClicked(object? sender, EventArgs e) => CaptureAsync(WebCaptureArea.FullPage);
+
+	// CaptureAsync: saves a PNG in the cache folder and shows it.
+	async void CaptureAsync(WebCaptureArea area)
+	{
+		try
+		{
+			var screenshot = await WebView.CaptureAsync(area);
+			var path = Path.Combine(FileSystem.CacheDirectory, $"capture-{area}.png");
+			await using (var file = File.Create(path))
+				await screenshot.CopyToAsync(file);
+
+			Log($"Captured {area}: {screenshot.Width} x {screenshot.Height} px, {new FileInfo(path).Length / 1024} KB, {path}");
+			var image = new ScrollView { Content = new Image { Source = ImageSource.FromFile(path), Aspect = Aspect.AspectFit } };
+			Grid.SetRow(image, 1);
+			await Navigation.PushModalAsync(new ContentPage
+			{
+				Title = area.ToString(),
+				Content = new Grid
+				{
+					RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Star)],
+					Children =
+					{
+						new Button { Text = "Close", Command = new Command(() => Navigation.PopModalAsync()) },
+						image,
+					},
+				},
+			});
+		}
+		catch (Exception ex)
+		{
+			Log($"Capture failed: {ex.Message}");
+		}
+	}
+
 	void OnClearCacheClicked(object? sender, EventArgs e)
 	{
 		WebView.ClearCache();
