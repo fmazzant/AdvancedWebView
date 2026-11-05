@@ -33,6 +33,22 @@ public class NavigationErrorsTests
     public void Ios_errors(string domain, long code, WebNavigationError expected) =>
         Assert.Equal(expected, NavigationErrors.FromNSError(domain, code));
 
+    // CoreWebView2WebErrorStatus values.
+    [Theory]
+    [InlineData(11, WebNavigationError.NoInternet)]   // Disconnected
+    [InlineData(7, WebNavigationError.Timeout)]       // Timeout
+    [InlineData(13, WebNavigationError.HostNotFound)] // HostNameNotResolved
+    [InlineData(12, WebNavigationError.HostNotFound)] // CannotConnect
+    [InlineData(6, WebNavigationError.HostNotFound)]  // ServerUnreachable
+    [InlineData(1, WebNavigationError.SslError)]      // CertificateCommonNameIsIncorrect
+    [InlineData(2, WebNavigationError.SslError)]      // CertificateExpired
+    [InlineData(5, WebNavigationError.SslError)]      // CertificateIsInvalid
+    [InlineData(14, WebNavigationError.Cancelled)]    // OperationCanceled
+    [InlineData(0, WebNavigationError.Unknown)]       // Unknown
+    [InlineData(10, WebNavigationError.Unknown)]      // ConnectionReset
+    public void Windows_errors(int status, WebNavigationError expected) =>
+        Assert.Equal(expected, NavigationErrors.FromWebView2(status));
+
     [Fact]
     public void Error_page_replaces_placeholders()
     {

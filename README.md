@@ -3,7 +3,7 @@
 [![Build](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml/badge.svg)](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml)
 [![NuGet](https://img.shields.io/nuget/v/Mafesoft.Maui.AdvancedWebView.svg)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
 
-AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS and Mac Catalyst). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
+AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Catalyst and Windows). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
 
 ## Requirements
 
@@ -11,6 +11,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS and Mac C
 - Android 5.0 (API 21) or later
 - iOS 15 or later
 - Mac Catalyst 15 (macOS 12) or later
+- Windows 10 version 1809 (build 17763) or later, with the WebView2 Runtime
 
 ## Installation
 
@@ -38,6 +39,26 @@ Mac Catalyst uses the same `WKWebView` code as iOS: everything this page says ab
 - **Debugging:** with `IsInspectable` on, the page appears directly in the *Develop* menu of Safari on the same Mac.
 
 The Info.plist usage descriptions listed below for iOS are needed on the Mac too.
+
+### Windows
+
+On Windows the control is WebView2 (Microsoft Edge, Chromium). The app needs the [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/), which Windows 11 and up-to-date Windows 10 already have. The tables on this page have no Windows column: the features work as described, with these differences.
+
+- **Bridge, user scripts and styles** work as on the other platforms, iframes included. Local HTML (`HtmlWebViewSource`) counts as local content for `AllowedOrigins`.
+- **Settings:** `JavaScriptEnabled`, `IsInspectable`, `ZoomEnabled` (Ctrl + wheel and pinch), `IsTransparent` and `PreferredColorScheme` apply at once. WebView2 has DevTools on by default; AdvancedWebView turns them off unless `IsInspectable` is on.
+  - `MediaPlaybackRequiresUserGesture = false` (the default) is a browser argument, read when the first web view of the app starts.
+  - `PreferredColorScheme` belongs to the WebView2 profile, so every web view of the app shares it.
+  - `TextZoom` sets the CSS `zoom` of the page: it scales the whole page, as on iOS.
+  - `ScrollBouncesEnabled`, `AllowsInlineMediaPlayback`, `LinkPreviewEnabled`, `AlgorithmicDarkening` and the Android-only settings have no effect.
+- **Page state:** WebView2 reports no load progress, so `Progress` moves in steps: 0.1 when the load starts, 0.5 when content arrives, 0.8 when the DOM is ready, then 1.
+- **New windows:** `window.open` without a user gesture is blocked while `JavaScriptCanOpenWindowsAutomatically` is `false`. `IsUserGesture` comes from WebView2. A form posted to `target="_blank"` opens as a GET.
+- **External links:** schemes WebView2 hands to Windows (`mailto:`, `tel:`, `ms-settings:` and others) follow `ExternalSchemes` and `ExternalLinkOpening`, without WebView2's confirmation dialog.
+- **Load failures:** the server's HTTP error page appears briefly before `ErrorPageHtml` replaces it.
+- **Downloads:** `DownloadBehavior.SystemDownloadManager` lets WebView2 save the file to the Downloads folder, with its own download UI.
+- **File upload** shows the Windows open dialog. `FileChooserRequested` is not raised.
+- **Permissions:** `AskUser` shows WebView2's dialog for the site. Windows privacy settings (camera, microphone, location) still apply. A packaged (MSIX) app needs the `webcam`, `microphone` and `location` capabilities in `Package.appxmanifest`.
+- **Fullscreen:** the app window goes fullscreen with the page. WebView2 fills only its own area, so hide the rest of the page in `FullscreenChanged`. With `FullscreenEnabled = false` the page leaves fullscreen right away.
+- **Cookies and website data:** WebView2 exposes them only through a loaded web view. Before the first `AdvancedWebView` is loaded, `CookieManager` and `ClearWebsiteDataAsync` wait for it. `WebsiteDataTypes.SessionStorage` is not stored, so there is nothing to clear.
 
 ## Usage
 
@@ -471,6 +492,7 @@ webView.IsInspectable = true;
 
 - **Android:** connect the device with USB debugging on (or start the emulator), open `chrome://inspect` in Chrome on your computer, and choose the page under the app's name. The setting is global to the app: debugging stays on for every web view while at least one `AdvancedWebView` with `IsInspectable` is on screen.
 - **iOS 16.4 or later:** on the device, turn on *Settings > Safari > Advanced > Web Inspector*. On the Mac, turn on *Safari > Settings > Advanced > Show features for web developers*, connect the device (or start the simulator), and choose the page in Safari's *Develop* menu. On earlier iOS versions, only debug builds can be inspected, and `IsInspectable` has no effect.
+- **Windows:** press F12 (or Ctrl+Shift+I) in the web view to open the Edge DevTools, or right-click and choose *Inspect*.
 
 ## Sample app
 
@@ -482,6 +504,7 @@ webView.IsInspectable = true;
 ```shell
 dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-android
 dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-maccatalyst  # on a Mac
+dotnet build samples/AdvancedWebView.Sample -t:Run -f net10.0-windows10.0.19041.0  # on Windows
 ```
 
 ## Tests
