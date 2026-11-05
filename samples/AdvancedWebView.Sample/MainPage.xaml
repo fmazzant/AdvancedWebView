@@ -113,6 +113,8 @@
                 <Button Text="Clear data" Clicked="OnClearDataClicked" />
                 <Button Text="Screenshot" Clicked="OnCaptureClicked" />
                 <Button Text="Full page" Clicked="OnCaptureFullPageClicked" />
+                <Button Text="PDF" Clicked="OnExportPdfClicked" />
+                <Button Text="Print" Clicked="OnPrintClicked" />
             </HorizontalStackLayout>
         </ScrollView>
 

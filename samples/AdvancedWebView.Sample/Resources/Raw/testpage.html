@@ -85,10 +85,11 @@
   <div class="filler"></div>
 
   <script>
-    var status = document.getElementById("status");
-    status.textContent = "JavaScript is enabled.";
-    status.style.background = "#e6f4ea";
-    status.style.color = "#137333";
+    // Not "status": a global var named status is window.status, which turns the element into a string.
+    var statusElement = document.getElementById("status");
+    statusElement.textContent = "JavaScript is enabled.";
+    statusElement.style.background = "#e6f4ea";
+    statusElement.style.color = "#137333";
 
     document.getElementById("btnAlert").onclick = function () {
       alert("Hello from JavaScript");

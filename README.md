@@ -332,6 +332,8 @@ On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `M
 | `PostUrlAsync(url, content, headers)` | Loads a page with a POST request. |
 | `ClearWebsiteDataAsync(types)` | Deletes cookies, web storage, IndexedDB, cache or service workers of every site. |
 | `CaptureAsync(area)` | Screenshot of the part on screen or of the whole page. See [Screenshots](#screenshots). |
+| `ExportPdfAsync(options)` | The page as a PDF, split into pages. See [PDF and printing](#pdf-and-printing). |
+| `PrintAsync(jobName)` | Opens the system print dialog. |
 
 `CookieManager` (property) reads and changes the web view's cookies. See [Cookies and website data](#cookies-and-website-data).
 
@@ -355,6 +357,31 @@ await screenshot.CopyToAsync(file); // ScreenshotFormat.Jpeg with a quality also
 | Android | The WebView drawn into a bitmap | Needs `AdvancedWebView.EnableFullPageCapture()` in `MauiProgram`, before the first web view is created. It turns on `WebView.enableSlowWholeDocumentDraw` for the app, which makes drawing slower and uses more memory. Without it, `FullPage` throws `NotSupportedException` |
 | iOS, Mac Catalyst | `takeSnapshot` | `createPDF` drawn into an image, iOS 14 or later |
 | Windows | `CapturePreviewAsync` | DevTools protocol (`Page.captureScreenshot`), also with `IsInspectable` off |
+
+### PDF and printing
+
+```csharp
+// The page split into pages, as when printing it: print CSS applies and the text stays selectable.
+await using var pdf = await webView.ExportPdfAsync(new WebPdfOptions
+{
+    PaperSize = WebPaperSize.A4,            // A4, A3, A5, Letter, Legal
+    Orientation = WebPageOrientation.Portrait,
+    MarginMillimeters = 10,
+});
+await using var file = File.Create(Path.Combine(FileSystem.CacheDirectory, "page.pdf"));
+await pdf.CopyToAsync(file);
+
+await webView.PrintAsync("Invoice 42"); // the system print dialog; null names the job after the page title
+```
+
+- `ExportPdfAsync` returns the PDF as a stream positioned at the start, without showing any UI. The page's `@media print` and `@page` CSS apply, so `@page` can change the margins.
+- `PrintAsync` opens the system print dialog. On iOS and Mac Catalyst the task completes when the print sheet closes. On Android and Windows it completes once the dialog is shown.
+
+| Platform | PDF | Print |
+|---|---|---|
+| Android | The WebView's print document, written without the print UI | `PrintManager` (the print service UI, including *Save as PDF*) |
+| iOS, Mac Catalyst | The web view's print formatter, drawn page by page | `UIPrintInteractionController` |
+| Windows | `PrintToPdfStreamAsync`, without header and footer | The system print dialog (`ShowPrintUI`) |
 
 ### Cookies and website data
 
@@ -520,7 +547,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

@@ -26,7 +26,7 @@
     <Authors>Federico Mazzanti</Authors>
     <Copyright>Copyright (c) 2025 Federico Mazzanti</Copyright>
     <Description>AdvancedWebView is a WebView for .NET MAUI (Android, iOS, Mac Catalyst and Windows) with a JavaScript bridge that works with any site: two-way messages, C# handlers the page awaits as Promises, typed calls to page functions, injected scripts and styles, and per-origin security. It also exposes platform settings such as JavaScript, popups, scroll bounce, mixed content, file access and cache control.</Description>
-    <PackageTags>maui;dotnet-maui;webview;javascript;bridge;postmessage;hybrid;android;ios;maccatalyst;windows;webview2;controls</PackageTags>
+    <PackageTags>maui;dotnet-maui;webview;javascript;bridge;postmessage;hybrid;android;ios;maccatalyst;windows;webview2;pdf;print;screenshot;controls</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fmazzant/AdvancedWebView</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fmazzant/AdvancedWebView.git</RepositoryUrl>
@@ -52,6 +52,46 @@
     <!-- WebViewCompat.addWebMessageListener / addDocumentStartJavaScript for the JS bridge -->
     <PackageReference Include="Xamarin.AndroidX.WebKit" Version="1.14.0.1" />
   </ItemGroup>
+
+  <!--
+    ExportPdfAsync on Android: a Java helper in the android.print package (see the comment in the Java file).
+    Library projects pack jars, not Java sources, into their .aar: the helper is compiled into a jar here and
+    included as an AndroidJavaLibrary, so it reaches the app through the NuGet package.
+  -->
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <AdvancedWebViewJava Include="Platforms/Android/Java/*.java" />
+    <!-- The .java files are not AndroidJavaSource: that would try to bind them. -->
+    <AndroidJavaSource Remove="@(AdvancedWebViewJava)" />
+  </ItemGroup>
+
+  <Target Name="_AdvancedWebViewCompileJava"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'"
+          BeforeTargets="_CategorizeAndroidLibraries;_CreateAarCache"
+          DependsOnTargets="_ResolveSdks;_GetJavaPlatformJar;_AdvancedWebViewJavaPaths;_AdvancedWebViewCompileJavaCore">
+    <ItemGroup>
+      <AndroidJavaLibrary Include="$(_AdvancedWebViewJar)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_AdvancedWebViewCompileJavaCore"
+          Inputs="@(AdvancedWebViewJava);$(MSBuildProjectFullPath)"
+          Outputs="$(_AdvancedWebViewJar)">
+    <RemoveDir Directories="$(_AdvancedWebViewClasses)" />
+    <MakeDir Directories="$(_AdvancedWebViewClasses)" />
+    <Exec Command="&quot;$(JavaSdkDirectory)/bin/javac&quot; -nowarn -Xlint:-options -source 1.8 -target 1.8 -classpath &quot;$(JavaPlatformJarPath)&quot; -d &quot;$(_AdvancedWebViewClasses)&quot; @(AdvancedWebViewJava->'&quot;%(FullPath)&quot;', ' ')" />
+    <Exec Command="&quot;$(JavaSdkDirectory)/bin/jar&quot; cf &quot;$(_AdvancedWebViewJar)&quot; -C &quot;$(_AdvancedWebViewClasses)&quot; ." />
+    <ItemGroup>
+      <FileWrites Include="$(_AdvancedWebViewJar)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- IntermediateOutputPath is only known once the SDK targets are imported, so the paths are set in a target. -->
+  <Target Name="_AdvancedWebViewJavaPaths">
+    <PropertyGroup>
+      <_AdvancedWebViewJar>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)advancedwebview-java.jar</_AdvancedWebViewJar>
+      <_AdvancedWebViewClasses>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)advancedwebview-java/</_AdvancedWebViewClasses>
+    </PropertyGroup>
+  </Target>
 
   <!-- Mac Catalyst uses the same WKWebView code as iOS: Platforms/iOS is compiled for both. -->
   <ItemGroup>
