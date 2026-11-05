@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac Catalyst apps run in the App Sandbox: each capability the web view uses needs an entitlement. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Loading web pages. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- getUserMedia: camera and microphone. -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<!-- navigator.geolocation. -->
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
+	<!-- <input type="file"> and DownloadRequested.SaveToAsync into a folder the user picks or Downloads. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.files.downloads.read-write</key>
+	<true/>
+</dict>
+</plist>
