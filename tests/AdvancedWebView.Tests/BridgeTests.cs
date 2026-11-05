@@ -7,10 +7,10 @@ public class BridgeTests
 {
     sealed record Setup(WebViewBridge Bridge, FakePage Page, BridgeOptions Options, List<WebMessageReceivedEventArgs> Events, List<string> Logs);
 
-    static Setup Create(BridgeOptions? options = null, bool android = false)
+    static Setup Create(BridgeOptions? options = null, FakeTransport transport = FakeTransport.Ios)
     {
         options ??= new BridgeOptions { AllowedOrigins = ["https://example.com"] };
-        var page = new FakePage(android);
+        var page = new FakePage(transport);
         var events = new List<WebMessageReceivedEventArgs>();
         var logs = new List<string>();
         var bridge = new WebViewBridge(options, page.Enqueue, events.Add, logs.Add);
@@ -283,13 +283,27 @@ public class BridgeTests
     [Fact]
     public async Task Android_replies_through_the_reply_proxy()
     {
-        var s = Create(android: true);
+        var s = Create(transport: FakeTransport.Android);
         s.Page.UseReplyChannel = true;
         s.Bridge.SetHandler("add", Json(_ => 3));
 
         var r = await InvokeAsync(s.Page, "add");
 
         Assert.Equal(3, r.GetProperty("value").GetInt32());
+    }
+
+    [Fact]
+    public async Task Windows_posts_through_chrome_webview_and_replies_through_web_messages()
+    {
+        var s = Create(transport: FakeTransport.Windows);
+        s.Page.UseReplyChannel = true;
+        s.Bridge.SetHandler("add", Json(_ => 4));
+
+        s.Page.Execute("AdvancedWebView.postMessage({ hello: 'windows' });");
+        var r = await InvokeAsync(s.Page, "add");
+
+        Assert.Equal(4, r.GetProperty("value").GetInt32());
+        Assert.Equal("windows", Assert.Single(s.Events).GetJson<JsonElement>().GetProperty("hello").GetString());
     }
 
     [Fact]

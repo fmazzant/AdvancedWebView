@@ -61,3 +61,24 @@ jobs:
         with:
           name: nuget-package
           path: artifacts/*
+
+  # The Windows target (WebView2) builds on Windows only.
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-windows
+
+      - name: Build library (Windows)
+        run: dotnet build src/AdvancedWebView/AdvancedWebView.csproj -c Release -f net10.0-windows10.0.19041.0
+
+      - name: Build sample app (Windows)
+        run: dotnet build samples/AdvancedWebView.Sample/AdvancedWebView.Sample.csproj -c Debug -f net10.0-windows10.0.19041.0

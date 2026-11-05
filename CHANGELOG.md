@@ -12,6 +12,7 @@ The platforms release.
 ### Added
 
 - **Mac Catalyst:** the library now targets `net10.0-maccatalyst` (Mac Catalyst 15 or later). It shares the iOS `WKWebView` implementation, so the iOS features work on the Mac. The README lists the App Sandbox entitlements the web view needs, and the sample app runs on the Mac.
+- **Windows (WebView2):** the library now targets `net10.0-windows10.0.19041.0` (Windows 10 1809 or later). The bridge (iframes included), user scripts and styles, page state, new windows, external links, load failures and the error page, certificate errors, `LoadUrl` with headers and `PostUrlAsync`, downloads, permissions, fullscreen, `IsInspectable` (Edge DevTools), display options, cookies and `ClearWebsiteDataAsync` work on Windows. The README lists the differences. The Windows target builds on Windows only.
 
 ## [1.3.0] - Unreleased
 

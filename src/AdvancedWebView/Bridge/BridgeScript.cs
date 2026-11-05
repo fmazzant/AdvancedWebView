@@ -22,6 +22,12 @@ namespace Mafesoft.Maui.Controls
               var pending = {};
               var listeners = [];
 
+              // Windows (WebView2): window.chrome.webview, used only when no other transport is there.
+              function isWebView2() {
+                return !(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.advancedWebView) &&
+                  !window.__advancedWebViewNative && !!(window.chrome && window.chrome.webview);
+              }
+
               function send(envelope) {
                 envelope.pageId = pageId;
                 var text = JSON.stringify(envelope);
@@ -29,6 +35,8 @@ namespace Mafesoft.Maui.Controls
                   window.webkit.messageHandlers.advancedWebView.postMessage(text);
                 } else if (window.__advancedWebViewNative) {
                   window.__advancedWebViewNative.postMessage(text);
+                } else if (isWebView2()) {
+                  window.chrome.webview.postMessage(text);
                 } else {
                   throw new Error("AdvancedWebView bridge is not available in this frame.");
                 }
@@ -150,6 +158,14 @@ namespace Mafesoft.Maui.Controls
                 window.__advancedWebViewNative.onmessage = function (event) {
                   try { api.__receive(JSON.parse(event.data)); } catch (e) { }
                 };
+              }
+
+              // Windows: replies to this frame arrive as WebView2 web messages (PostWebMessageAsString).
+              if (isWebView2()) {
+                window.chrome.webview.addEventListener("message", function (event) {
+                  if (typeof event.data !== "string") { return; }
+                  try { api.__receive(JSON.parse(event.data)); } catch (e) { }
+                });
               }
 
               try { window.dispatchEvent(new Event("advancedwebviewready")); } catch (e) { }

@@ -73,6 +73,17 @@ namespace Mafesoft.Maui.Controls
                 _ => WebNavigationError.Unknown,
             };
         }
+
+        /// <summary>Windows: the <c>CoreWebView2WebErrorStatus</c> of a failed navigation, as a number.</summary>
+        public static WebNavigationError FromWebView2(int status) => status switch
+        {
+            >= 1 and <= 5 => WebNavigationError.SslError,           // certificate name, expired, client certificate, revoked, invalid
+            6 or 12 or 13 => WebNavigationError.HostNotFound,      // ServerUnreachable, CannotConnect, HostNameNotResolved
+            7 => WebNavigationError.Timeout,                       // Timeout
+            11 => WebNavigationError.NoInternet,                   // Disconnected
+            14 => WebNavigationError.Cancelled,                    // OperationCanceled
+            _ => WebNavigationError.Unknown,
+        };
     }
 
     /// <summary>Builds the custom error page from <c>ErrorPageHtml</c>.</summary>

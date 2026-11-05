@@ -8,15 +8,23 @@ namespace Mafesoft.Maui.Controls.Tests;
 /// A page (one frame) running the real bridge script in Jint. What the page posts goes to <see cref="WebViewBridge"/>;
 /// what C# sends back is queued and executed by <see cref="SettleAsync"/> on the test thread (Jint is not thread-safe).
 /// </summary>
+/// <summary>The native transport the fake page exposes to the bridge script.</summary>
+internal enum FakeTransport
+{
+    Ios,
+    Android,
+    Windows,
+}
+
 internal sealed class FakePage
 {
     readonly Engine engine = new(o => o.Strict(false));
     readonly ConcurrentQueue<string> inbox = new();
-    readonly bool android;
+    readonly FakeTransport transport;
 
-    public FakePage(bool android = false, bool injectBridge = true)
+    public FakePage(FakeTransport transport = FakeTransport.Ios, bool injectBridge = true)
     {
-        this.android = android;
+        this.transport = transport;
         engine.SetValue("__post", new Action<string>(text => Posted.Add(text)));
         engine.Execute("""
             var window = globalThis;
@@ -25,10 +33,19 @@ internal sealed class FakePage
             window.setTimeout = function (f) { };
             """);
 
-        if (android)
-            engine.Execute("window.__advancedWebViewNative = { postMessage: function (t) { __post(t); } };");
-        else
-            engine.Execute("window.webkit = { messageHandlers: { advancedWebView: { postMessage: function (t) { __post(t); } } } };");
+        engine.Execute(transport switch
+        {
+            FakeTransport.Android => "window.__advancedWebViewNative = { postMessage: function (t) { __post(t); } };",
+            // WebView2: window.chrome.webview is an event target for the host's web messages.
+            FakeTransport.Windows => """
+                var __webMessageListeners = [];
+                window.chrome = { webview: {
+                  postMessage: function (t) { __post(t); },
+                  addEventListener: function (type, l) { if (type === "message") { __webMessageListeners.push(l); } }
+                } };
+                """,
+            _ => "window.webkit = { messageHandlers: { advancedWebView: { postMessage: function (t) { __post(t); } } } };",
+        });
 
         if (injectBridge)
             engine.Execute(BridgeScript.Source);
@@ -105,7 +122,10 @@ internal sealed class FakePage
     }
 
     Task ReplyToThisFrame(string envelope) =>
-        Enqueue(android
-            ? "window.__advancedWebViewNative.onmessage({ data: " + BridgeProtocol.JsonString(envelope) + " });"
-            : BridgeProtocol.ReceiveScript(envelope));
+        Enqueue(transport switch
+        {
+            FakeTransport.Android => "window.__advancedWebViewNative.onmessage({ data: " + BridgeProtocol.JsonString(envelope) + " });",
+            FakeTransport.Windows => "__webMessageListeners.forEach(function (l) { l({ data: " + BridgeProtocol.JsonString(envelope) + " }); });",
+            _ => BridgeProtocol.ReceiveScript(envelope),
+        });
 }
