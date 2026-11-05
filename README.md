@@ -10,7 +10,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 - .NET 10
 - Android 5.0 (API 21) or later
 - iOS 15 or later
-- Mac Catalyst 15 (macOS 12) or later
+- Mac Catalyst 15 (macOS 12) or later. The .NET 10 Mac Catalyst workload 27 builds apps for Mac Catalyst 17 (macOS 14) or later only: set `SupportedOSPlatformVersion` to 17.0 for `net10.0-maccatalyst` in the app project
 - Windows 10 version 1809 (build 17763) or later, with the WebView2 Runtime
 
 ## Installation
