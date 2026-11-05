@@ -10,7 +10,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 - .NET 10
 - Android 5.0 (API 21) or later
 - iOS 15 or later
-- Mac Catalyst 15 (macOS 12) or later
+- Mac Catalyst 15 (macOS 12) or later. The .NET 10 Mac Catalyst workload 27 builds apps for Mac Catalyst 17 (macOS 14) or later only: set `SupportedOSPlatformVersion` to 17.0 for `net10.0-maccatalyst` in the app project
 - Windows 10 version 1809 (build 17763) or later, with the WebView2 Runtime
 
 ## Installation
@@ -331,8 +331,30 @@ On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `M
 | `LoadUrl(url, headers)` | Loads a page with extra HTTP headers. |
 | `PostUrlAsync(url, content, headers)` | Loads a page with a POST request. |
 | `ClearWebsiteDataAsync(types)` | Deletes cookies, web storage, IndexedDB, cache or service workers of every site. |
+| `CaptureAsync(area)` | Screenshot of the part on screen or of the whole page. See [Screenshots](#screenshots). |
 
 `CookieManager` (property) reads and changes the web view's cookies. See [Cookies and website data](#cookies-and-website-data).
+
+### Screenshots
+
+`CaptureAsync` returns MAUI's `IScreenshotResult`: save it as PNG or JPEG, or show it in an `Image`.
+
+```csharp
+var screenshot = await webView.CaptureAsync(WebCaptureArea.FullPage); // or CaptureAsync() for the part on screen
+await using var file = File.Create(Path.Combine(FileSystem.CacheDirectory, "page.png"));
+await screenshot.CopyToAsync(file); // ScreenshotFormat.Jpeg with a quality also works
+// screenshot.Width, screenshot.Height: pixels
+```
+
+- `CaptureAsync()` captures the part of the page on screen. For an `AdvancedWebView` it takes the place of MAUI's `CaptureAsync()` view extension, with a compatible result. It reads the web view's own rendering, so the page is never blank.
+- `WebCaptureArea.FullPage` captures the whole page from the top, including the parts scrolled out of view. A very long page makes a very large image.
+- Call it after the page is shown. Before the view is laid out it throws `InvalidOperationException`.
+
+| Platform | Viewport | Full page |
+|---|---|---|
+| Android | The WebView drawn into a bitmap | Needs `AdvancedWebView.EnableFullPageCapture()` in `MauiProgram`, before the first web view is created. It turns on `WebView.enableSlowWholeDocumentDraw` for the app, which makes drawing slower and uses more memory. Without it, `FullPage` throws `NotSupportedException` |
+| iOS, Mac Catalyst | `takeSnapshot` | `createPDF` drawn into an image, iOS 14 or later |
+| Windows | `CapturePreviewAsync` | DevTools protocol (`Page.captureScreenshot`), also with `IsInspectable` off |
 
 ### Cookies and website data
 
@@ -498,7 +520,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

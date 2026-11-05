@@ -111,6 +111,8 @@
                 <Button Text="Cookies" Clicked="OnShowCookiesClicked" />
                 <Button Text="HttpClient" Clicked="OnHttpClientClicked" />
                 <Button Text="Clear data" Clicked="OnClearDataClicked" />
+                <Button Text="Screenshot" Clicked="OnCaptureClicked" />
+                <Button Text="Full page" Clicked="OnCaptureFullPageClicked" />
             </HorizontalStackLayout>
         </ScrollView>
 
