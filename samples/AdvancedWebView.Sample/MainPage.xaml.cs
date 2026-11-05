@@ -277,6 +277,38 @@ public partial class MainPage : ContentPage
 			WebView.CacheMode = (WebViewCacheMode)CacheModePicker.SelectedIndex;
 	}
 
+	// ExportPdfAsync: saves the page as an A4 PDF in the cache folder and opens it with the system viewer.
+	async void OnExportPdfClicked(object? sender, EventArgs e)
+	{
+		try
+		{
+			await using var pdf = await WebView.ExportPdfAsync(new WebPdfOptions { PaperSize = WebPaperSize.A4, MarginMillimeters = 12 });
+			var path = Path.Combine(FileSystem.CacheDirectory, "page.pdf");
+			await using (var file = File.Create(path))
+				await pdf.CopyToAsync(file);
+
+			Log($"PDF: {new FileInfo(path).Length / 1024} KB, {path}");
+			await Launcher.Default.OpenAsync(new OpenFileRequest("PDF", new ReadOnlyFile(path, "application/pdf")));
+		}
+		catch (Exception ex)
+		{
+			Log($"PDF failed: {ex.Message}");
+		}
+	}
+
+	async void OnPrintClicked(object? sender, EventArgs e)
+	{
+		try
+		{
+			await WebView.PrintAsync();
+			Log("Print dialog shown");
+		}
+		catch (Exception ex)
+		{
+			Log($"Print failed: {ex.Message}");
+		}
+	}
+
 	void OnCaptureClicked(object? sender, EventArgs e) => CaptureAsync(WebCaptureArea.Viewport);
 
 	void OnCaptureFullPageClicked(object? sender, EventArgs e) => CaptureAsync(WebCaptureArea.FullPage);

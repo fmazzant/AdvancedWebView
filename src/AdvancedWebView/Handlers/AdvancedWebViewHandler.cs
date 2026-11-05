@@ -69,6 +69,12 @@ namespace Mafesoft.Maui.Controls.Handlers
         /// <summary>Captures the page (CaptureAsync). Must be called on the main thread.</summary>
         internal partial Task<WebViewScreenshot> CapturePageAsync(WebCaptureArea area);
 
+        /// <summary>Exports the page as a paginated PDF (ExportPdfAsync). Must be called on the main thread.</summary>
+        internal partial Task<byte[]> ExportPdfAsync(WebPdfOptions options);
+
+        /// <summary>Opens the system print dialog (PrintAsync). Must be called on the main thread.</summary>
+        internal partial Task PrintAsync(string jobName);
+
         /// <summary>Loads a request from LoadUrl/PostUrlAsync. Must be called on the main thread.</summary>
         internal partial void LoadRequest(WebRequest request);
 

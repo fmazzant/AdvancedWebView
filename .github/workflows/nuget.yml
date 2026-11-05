@@ -45,5 +45,16 @@ jobs:
           if [ "$GITHUB_REF_TYPE" != "tag" ]; then VERSION=""; fi
           dotnet pack src/AdvancedWebView/AdvancedWebView.csproj -c Release -o artifacts ${VERSION:+-p:Version=$VERSION}
 
+      # bash expands the glob: on Windows, NuGet's own wildcard handling does not resolve "artifacts/*.nupkg"
+      # (forward slash). The matching .snupkg next to each .nupkg is pushed automatically.
       - name: Publish on NuGet
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          shopt -s nullglob
+          packages=(artifacts/*.nupkg)
+          ls -la artifacts || true
+          if [ ${#packages[@]} -eq 0 ]; then echo "No .nupkg found in artifacts/"; exit 1; fi
+          for pkg in "${packages[@]}"; do
+            dotnet nuget push "$pkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
