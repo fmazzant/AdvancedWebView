@@ -5,6 +5,26 @@
 
 AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Catalyst and Windows). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
 
+## Why AdvancedWebView
+
+| Feature | MAUI `WebView` | AdvancedWebView |
+|---|---|---|
+| Navigation, cookies, user agent, `EvaluateJavaScriptAsync` | ✔ | ✔ (inherited) |
+| JS ↔ C# bridge for remote pages, with origin checks | ✘ (`HybridWebView` targets app-bundled content) | ✔ Messages both ways, C# handlers with results, script and CSS injection. See [JavaScript bridge](#javascript-bridge) |
+| File upload | Android: single file only, no `capture` | ✔ `multiple`, `accept`, camera; custom picker with `FileChooserRequested`. See [File upload](#file-upload) |
+| Downloads | Ignored on Android, navigation fails on iOS | ✔ `DownloadRequested`, `SaveToAsync` with the web view's cookies, `blob:` and `data:`. See [Downloads](#downloads) |
+| Camera, microphone, location | Always denied on Android | ✔ `PermissionRequested` (`Grant`, `Deny`, `AskUser`). See [Permissions](#permissions) |
+| Fullscreen | No events | ✔ `FullscreenChanged`, `IsFullscreen`, back button on Android. See [Fullscreen](#fullscreen) |
+| `target="_blank"` and `window.open` | No control | ✔ `NewWindowRequested`: same view, browser or cancel. See [New windows](#new-windows) |
+| `tel:`, `mailto:`, `intent://` links | Error page | ✔ Opened by the system; `InternalHosts` sends other sites to the browser. See [External links](#external-links) |
+| Load failures | No error details | ✔ Typed errors (no internet, timeout, SSL, HTTP status) and a custom `ErrorPageHtml`. See [Load failures and error page](#load-failures-and-error-page) |
+| Page state | ✘ | ✔ Bindable `Progress`, `IsLoading`, `Title`, `CurrentUrl`. See [Page state](#page-state) |
+| Platform settings (zoom, text zoom, transparency, mixed content, cache mode, dark mode…) | ✘ | ✔ See [Properties](#properties) |
+| Remote debugging | ✘ | ✔ `IsInspectable`. See [Debugging the page](#debugging-the-page) |
+| Custom headers and POST | ✘ | ✔ `LoadUrl(url, headers)`, `PostUrlAsync`. See [Headers and POST](#headers-and-post) |
+| Cookies and website data | `Cookies` container only | ✔ `CookieManager`, `ClearWebsiteDataAsync`. See [Cookies and website data](#cookies-and-website-data) |
+| Screenshots, PDF, printing | ✘ | ✔ `CaptureAsync`, `ExportPdfAsync`, `PrintAsync`. See [Screenshots](#screenshots) and [PDF and printing](#pdf-and-printing) |
+
 ## Requirements
 
 - .NET 10
