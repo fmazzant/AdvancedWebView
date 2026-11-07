@@ -32,6 +32,7 @@
     <RepositoryUrl>https://github.com/fmazzant/AdvancedWebView.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReleaseNotes>https://github.com/fmazzant/AdvancedWebView/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -42,6 +43,7 @@
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
