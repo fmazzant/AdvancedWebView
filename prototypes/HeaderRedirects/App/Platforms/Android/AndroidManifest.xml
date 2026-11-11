@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+	<!-- The echo server is plain HTTP on the host (10.0.2.2). -->
+	<application android:usesCleartextTraffic="true"></application>
+	<uses-permission android:name="android.permission.INTERNET" />
+</manifest>

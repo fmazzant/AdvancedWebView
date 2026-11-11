@@ -1,0 +1,126 @@
+name: Prototype - headers on redirects (#60)
+
+# Temporary: runs prototypes/HeaderRedirects on an Android emulator and an iOS simulator and reports which
+# requests carried the LoadUrl headers. Lives on the prototype branch only.
+on:
+  push:
+    branches: [ prototype/60-header-redirects ]
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '21'
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android --version 10.0.403
+
+      # TargetFrameworks is overridden for the app and the library: Linux has no iOS workload.
+      - name: Install Android dependencies
+        run: >
+          dotnet build src/AdvancedWebView/AdvancedWebView.csproj
+          -t:InstallAndroidDependencies -f net10.0-android -p:TargetFrameworks=net10.0-android
+          -p:AndroidSdkDirectory="$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True
+
+      - name: Build app
+        run: >
+          dotnet build prototypes/HeaderRedirects/App/HeaderRedirects.csproj -c Debug
+          -f net10.0-android -p:TargetFrameworks=net10.0-android
+
+      - name: Start echo server
+        run: |
+          dotnet build prototypes/HeaderRedirects/EchoServer/EchoServer.csproj -c Release
+          nohup dotnet run --project prototypes/HeaderRedirects/EchoServer/EchoServer.csproj -c Release --no-build > echo-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -s http://127.0.0.1:5100/status && break; sleep 1; done
+
+      - name: Run scenarios
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: bash prototypes/HeaderRedirects/android.sh
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-results
+          path: |
+            prototypes/HeaderRedirects/out/
+            echo-server.log
+
+  ios:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '27.1'
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios --version 10.0.403
+
+      - name: Build app
+        run: |
+          rid=iossimulator-$( [ "$(uname -m)" = "arm64" ] && echo arm64 || echo x64 )
+          echo "RID=$rid" >> "$GITHUB_ENV"
+          dotnet build prototypes/HeaderRedirects/App/HeaderRedirects.csproj -c Debug \
+            -f net10.0-ios -p:TargetFrameworks=net10.0-ios -p:RuntimeIdentifier=$rid
+
+      - name: Start echo server
+        run: |
+          dotnet build prototypes/HeaderRedirects/EchoServer/EchoServer.csproj -c Release
+          nohup dotnet run --project prototypes/HeaderRedirects/EchoServer/EchoServer.csproj -c Release --no-build > echo-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -s http://127.0.0.1:5100/status && break; sleep 1; done
+
+      - name: Run scenarios
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          for runtime in sorted(devices, reverse=True):
+              if 'iOS' not in runtime: continue
+              for d in devices[runtime]:
+                  if d['name'].startswith('iPhone'):
+                      print(d['udid']); sys.exit()
+          ")
+          echo "Simulator: $udid"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          app=$(find prototypes/HeaderRedirects/App/bin/Debug/net10.0-ios/$RID -maxdepth 1 -name '*.app' | head -n 1)
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" com.mafesoft.headerredirects
+          bash prototypes/HeaderRedirects/run-scenarios.sh "iOS simulator ($(xcrun simctl list devices | grep "$udid" | sed 's/^ *//'))" prototypes/HeaderRedirects/out
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-results
+          path: |
+            prototypes/HeaderRedirects/out/
+            echo-server.log
