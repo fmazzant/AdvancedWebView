@@ -19,6 +19,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 | `target="_blank"` and `window.open` | No control | ✔ `NewWindowRequested`: same view, browser or cancel. See [New windows](#new-windows) |
 | `tel:`, `mailto:`, `intent://` links | Error page | ✔ Opened by the system; `InternalHosts` sends other sites to the browser. See [External links](#external-links) |
 | Load failures | No error details | ✔ Typed errors (no internet, timeout, SSL, HTTP status) and a custom `ErrorPageHtml`. See [Load failures and error page](#load-failures-and-error-page) |
+| HTTP authentication (Basic, Digest, NTLM) | Cancelled on Android and iOS | ✔ `HttpAuthenticationRequested` with the app's credentials. See [HTTP authentication](#http-authentication) |
 | Page state | ✘ | ✔ Bindable `Progress`, `IsLoading`, `Title`, `CurrentUrl`. See [Page state](#page-state) |
 | Platform settings (zoom, text zoom, transparency, mixed content, cache mode, dark mode…) | ✘ | ✔ See [Properties](#properties) |
 | Remote debugging | ✘ | ✔ `IsInspectable`. See [Debugging the page](#debugging-the-page) |
@@ -339,6 +340,35 @@ webView.ServerCertificateError += (s, e) => e.Proceed = false; // default: rejec
 - `ErrorPageHtml` placeholders: `{{url}}`, `{{description}}`, `{{error}}`, `{{statusCode}}`. They are HTML-encoded. The page is shown for every error except `Cancelled`. Set `e.ShowErrorPage = false` to keep the current page.
 - `AdvancedWebView.retry()` loads the failed URL again as a normal navigation, so it raises `Navigating`. It needs JavaScript and the bridge. The error page is local content, so it can use the bridge whatever `Bridge.AllowedOrigins` says.
 - Invalid certificates are rejected unless a `ServerCertificateError` handler sets `e.Proceed = true`. Do this only during development, for example for a local server with a self-signed certificate. Accepting every certificate exposes the connection to interception, and Google Play rejects apps that do it.
+
+### HTTP authentication
+
+Pages protected by HTTP authentication (Basic, Digest, NTLM, Negotiate) raise `HttpAuthenticationRequested`. Answer with the credentials, or cancel:
+
+```csharp
+webView.HttpAuthenticationRequested += async (s, e) =>
+{
+    // e.Host, e.Realm, e.Scheme, e.IsProxy, e.PreviousFailureCount
+    if (e.PreviousFailureCount >= 3)
+    {
+        e.Cancel(); // stop after three wrong attempts
+        return;
+    }
+
+    using var deferral = e.GetDeferral(); // before the first await
+    var login = await ShowLoginAsync(e.Host, e.Realm); // your own dialog
+    if (login is null)
+        e.Cancel();
+    else
+        e.Proceed(login.User, login.Password);
+};
+```
+
+- Without a handler, the platform's default applies: Android and iOS send no credentials, WebView2 on Windows shows its own login dialog.
+- `Cancel()` sends no credentials: the page shows the server's answer, usually a 401 page.
+- The platform keeps accepted credentials for the session, so the event is usually raised once per site.
+- What each platform reports: `Scheme` is `Unknown` on Android, which reports host and realm only. `IsProxy` is reported on iOS and Mac Catalyst only. `PreviousFailureCount` comes from iOS; on Android and Windows the control counts the attempts for the host and realm until a page loads.
+- Basic sends the password base64-encoded, not encrypted: use it only over https.
 
 ### Platform delegates
 

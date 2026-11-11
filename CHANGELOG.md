@@ -5,6 +5,12 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- **`HttpAuthenticationRequested`:** pages protected by HTTP authentication (Basic, Digest, NTLM, Negotiate) can be opened with the app's credentials, also after an `await` (`GetDeferral`). `PreviousFailureCount` lets the app stop after wrong credentials. Without a handler nothing changes ([#54](https://github.com/fmazzant/AdvancedWebView/issues/54)).
+
 ## [1.4.0] - Unreleased
 
 The platforms release.
