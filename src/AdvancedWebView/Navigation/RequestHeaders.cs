@@ -44,6 +44,7 @@ namespace Mafesoft.Maui.Controls
 
         readonly List<RequestHeaderScope> scopes = [];
         RequestHeaderScope? pending;
+        bool pendingIsPost;
         RequestHeaderScope? current;
         bool otherNavigation;
 
@@ -51,6 +52,7 @@ namespace Mafesoft.Maui.Controls
         public void BeginRequest(string url, IReadOnlyDictionary<string, string> headers, bool isPost)
         {
             otherNavigation = false;
+            pendingIsPost = isPost;
             if (headers.Count == 0)
             {
                 pending = null;
@@ -62,8 +64,7 @@ namespace Mafesoft.Maui.Controls
             if (scopes.Count > MaxScopes)
                 scopes.RemoveAt(0);
 
-            // A POST is not sent again by Reload(): the native reload handles it (and asks before resending a form).
-            pending = isPost ? null : scope;
+            pending = scope;
         }
 
         /// <summary>A link or a script started a navigation (not LoadUrl, reload or back): its redirects are not ours.</summary>
@@ -76,10 +77,19 @@ namespace Mafesoft.Maui.Controls
         /// <summary>A new top-level document was committed (after any redirect).</summary>
         public void OnCommitted(string? url)
         {
-            current = pending is { } scope && scope.IsAllowed(url) ? scope : null;
+            // A POST is not sent again by Reload(): the native reload handles it (and asks before resending a form).
+            current = pending is { } scope && !pendingIsPost && scope.IsAllowed(url) ? scope : null;
             pending = null;
             otherNavigation = false;
         }
+
+        /// <summary>
+        /// The headers to add to a top-level document request for <paramref name="url"/> while the LoadUrl navigation is
+        /// in progress (same-origin redirects included); null for any other request. For engines where the app adds the
+        /// headers to each request itself (Windows).
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? GetPendingHeaders(string? url) =>
+            pending is { } scope && scope.IsAllowed(url) ? scope.Headers : null;
 
         /// <summary>
         /// Whether a top-level redirect to <paramref name="url"/> must be loaded again without headers. For engines that
