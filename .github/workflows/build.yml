@@ -20,7 +20,7 @@ jobs:
         with:
           global-json-file: global.json
 
-      # The latest .NET 10 iOS workload (27.1.x) requires Xcode 27.1.
+      # Must match the pinned MAUI workload below: workload set 10.0.403 (iOS 27.1.x) requires Xcode 27.1.
       - name: Select Xcode 27.1
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -32,8 +32,11 @@ jobs:
           distribution: microsoft
           java-version: '21'
 
+      # Pinned workload set: without --version the latest one is installed, and a new release can
+      # require a newer Xcode (or new build checks) and break the build. Update it manually,
+      # together with the Xcode version above.
       - name: Install MAUI workload
-        run: dotnet workload install maui
+        run: dotnet workload install maui --version 10.0.403
 
       # Installs the Android platform (API 36) and build tools that .NET 10 compiles against.
       - name: Install Android dependencies
