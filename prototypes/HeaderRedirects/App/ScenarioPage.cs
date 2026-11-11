@@ -139,6 +139,15 @@ public class ScenarioPage : ContentPage
 		}
 		// Sub-resources and any late request.
 		await Task.Delay(2000);
+		try
+		{
+			var length = await web.EvaluateJavaScriptAsync("history.length");
+			await Log($"{scenario} step {name}: history.length={length} url={web.CurrentUrl}");
+		}
+		catch (Exception ex)
+		{
+			await Log($"{scenario} step {name}: history.length failed: {ex.Message}");
+		}
 	}
 
 	async Task Log(string line)

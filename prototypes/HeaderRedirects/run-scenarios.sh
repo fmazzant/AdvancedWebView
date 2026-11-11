@@ -15,6 +15,7 @@ echo "status after wait: ${status:-none}"
 
 curl -s http://127.0.0.1:5100/results > "$outdir/results.json"
 python3 "$(dirname "$0")/report.py" "$outdir/results.json" "$title" > "$outdir/report.md"
+verdict=$?
 cat "$outdir/report.md"
 cat "$outdir/report.md" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
-[ "$status" = "done" ]
+[ "$status" = "done" ] && [ "$verdict" = "0" ]

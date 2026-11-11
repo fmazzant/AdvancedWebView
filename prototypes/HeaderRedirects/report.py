@@ -31,4 +31,10 @@ for r in records:
         custom = "**yes**" if r.get("protoHeader") else "no"
         out.append(f"| {r['seq']} | `{r['method']} {r['path']}` | {r['origin']} | {auth} | {custom} |")
 
+# Verdict (#60): nothing sent by LoadUrl may reach origin B.
+leaks = [r for r in records if r["kind"] == "request" and r["origin"] == "B" and (r.get("authorization") or r.get("protoHeader"))]
+out += ["", "### Verdict", ""]
+out += [f"- **LEAK**: `{r['method']} {r['path']}` on B (#{r['seq']})" for r in leaks] or ["- No LoadUrl header reached origin B."]
+
 print("\n".join(out))
+sys.exit(3 if leaks else 0)
