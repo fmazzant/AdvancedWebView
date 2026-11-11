@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.0] - Unreleased
 
-### Fixed
+### Changed
 
-- Docs: `LoadUrl` and `PostUrlAsync` said the headers go with the first request only. On Windows they are also sent on redirects (to other sites too), `Reload()` and back navigation, and `Reload()` drops them on the first page the web view loaded. The README and the XML docs now say so ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)).
+- **`LoadUrl` / `PostUrlAsync` headers go only to the origin of the URL** (scheme, host and port), on every platform ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)). Before, a redirect to another site received them too, `Authorization` included (Android, Windows; iOS removed only `Authorization`). Redirects to the same origin keep them. On Android this needs Android 7 (API 24) or later.
+- **`Reload()` sends the headers again** while the page loaded by `LoadUrl` is on their origin, on every platform. Before, Windows dropped them on the first page of the web view and Android after a redirect. The request is sent again and the history does not change.
+- **Windows:** back and forward navigation no longer send the headers again: the library now adds them to the requests itself instead of giving them to WebView2.
 
 ## [1.4.0.1] - 2026-11-08
 

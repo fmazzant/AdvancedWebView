@@ -57,11 +57,27 @@ namespace Mafesoft.Maui.Controls.Handlers
                 // (tel:, mailto:, hosts outside InternalHosts). Launcher also opens universal links in their app.
                 base.DecidePolicy(webView, navigationAction, policy =>
                 {
-                    if (policy == WKNavigationActionPolicy.Allow && handler.TryGetTarget(out var target) && target.Advanced is { } view &&
-                        view.TryOpenExternalLink(navigationAction.Request.Url?.AbsoluteString, navigationAction.TargetFrame?.MainFrame ?? true))
-                        decisionHandler(WKNavigationActionPolicy.Cancel);
-                    else
-                        decisionHandler(policy);
+                    if (policy == WKNavigationActionPolicy.Allow && handler.TryGetTarget(out var target) && target.Advanced is { } view)
+                    {
+                        var isMainFrame = navigationAction.TargetFrame?.MainFrame ?? true;
+                        if (view.TryOpenExternalLink(navigationAction.Request.Url?.AbsoluteString, isMainFrame))
+                        {
+                            decisionHandler(WKNavigationActionPolicy.Cancel);
+                            return;
+                        }
+
+                        // #60: LoadUrl headers on their way to another origin (a redirect, or a reload or back navigation
+                        // of a redirected page). The request is loaded again without them.
+                        if (isMainFrame && target.CheckLeakedHeaders(navigationAction.Request) is { Cancel: true } check)
+                        {
+                            decisionHandler(WKNavigationActionPolicy.Cancel);
+                            if (check.Retry is { } clean)
+                                webView.LoadRequest(clean);
+                            return;
+                        }
+                    }
+
+                    decisionHandler(policy);
                 });
             }
         }
