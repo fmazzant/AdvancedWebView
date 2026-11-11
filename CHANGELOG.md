@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.0] - Unreleased
 
+### Added
+
+- **`HttpAuthenticationRequested`:** pages protected by HTTP authentication (Basic, Digest, NTLM, Negotiate) can be opened with the app's credentials, also after an `await` (`GetDeferral`). `PreviousFailureCount` lets the app stop after wrong credentials. Without a handler nothing changes ([#54](https://github.com/fmazzant/AdvancedWebView/issues/54)).
+
 ### Changed
 
 - **`LoadUrl` / `PostUrlAsync` headers go only to the origin of the URL** (scheme, host and port), on every platform ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)). Before, a redirect to another site received them too, `Authorization` included (Android, Windows; iOS removed only `Authorization`). Redirects to the same origin keep them. On Android this needs Android 7 (API 24) or later.

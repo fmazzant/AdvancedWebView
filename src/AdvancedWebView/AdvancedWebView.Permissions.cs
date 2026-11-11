@@ -40,8 +40,7 @@ namespace Mafesoft.Maui.Controls
     /// </summary>
     public sealed class PermissionRequestedEventArgs : EventArgs
     {
-        readonly TaskCompletionSource done = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        int pending = 1; // the event itself; deferrals add to it
+        readonly EventDeferral deferral = new();
 
         internal PermissionRequestedEventArgs(Uri? origin, WebPermissions permissions, PermissionDecision decision)
         {
@@ -68,35 +67,10 @@ namespace Mafesoft.Maui.Controls
         /// e.Decision = await page.DisplayAlertAsync("Camera", "Allow?", "Allow", "Deny") ? PermissionDecision.Grant : PermissionDecision.Deny;
         /// </code>
         /// </example>
-        public IDisposable GetDeferral()
-        {
-            Interlocked.Increment(ref pending);
-            return new Deferral(this);
-        }
+        public IDisposable GetDeferral() => deferral.GetDeferral();
 
         /// <summary>Completes once the event handlers have returned and every deferral is disposed.</summary>
-        internal Task WhenDecidedAsync()
-        {
-            Release();
-            return done.Task;
-        }
-
-        void Release()
-        {
-            if (Interlocked.Decrement(ref pending) == 0)
-                done.TrySetResult();
-        }
-
-        sealed class Deferral(PermissionRequestedEventArgs owner) : IDisposable
-        {
-            int disposed;
-
-            public void Dispose()
-            {
-                if (Interlocked.Exchange(ref disposed, 1) == 0)
-                    owner.Release();
-            }
-        }
+        internal Task WhenDecidedAsync() => deferral.WhenDoneAsync();
     }
 
     // Camera, microphone and location requested by the page.
