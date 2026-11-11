@@ -24,7 +24,8 @@ public class ScenarioPage : ContentPage
 	AdvancedWebView web = null!;
 	TaskCompletionSource<string>? navigated;
 	string scenario = "";
-	bool started;
+	// Static: Android can recreate the activity (and this page) while the scenarios run; they must run once.
+	static bool started;
 
 	protected override async void OnAppearing()
 	{
@@ -33,6 +34,7 @@ public class ScenarioPage : ContentPage
 			return;
 		started = true;
 
+		Console.WriteLine($"HeaderRedirects: starting, server {A}");
 		try
 		{
 			await Log($"env platform={DeviceInfo.Platform} os={DeviceInfo.VersionString} model={DeviceInfo.Model} webview={WebViewVersion()} B={B}");

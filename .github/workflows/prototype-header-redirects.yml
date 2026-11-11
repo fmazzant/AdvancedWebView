@@ -9,6 +9,7 @@ on:
 
 jobs:
   android:
+    if: ${{ !contains(github.event.head_commit.message, '[ios-only]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -114,8 +115,22 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           app=$(find prototypes/HeaderRedirects/App/bin/Debug/net10.0-ios/$RID -maxdepth 1 -name '*.app' | head -n 1)
           xcrun simctl install "$udid" "$app"
-          xcrun simctl launch "$udid" com.mafesoft.headerredirects
+          out=prototypes/HeaderRedirects/out; mkdir -p "$out"
+          curl -s http://127.0.0.1:5100/status; echo
+          xcrun simctl launch --stdout="$PWD/$out/app-stdout.txt" --stderr="$PWD/$out/app-stderr.txt" "$udid" com.mafesoft.headerredirects
+          sleep 60
+          xcrun simctl io "$udid" screenshot "$out/screen-60s.png" || true
           bash prototypes/HeaderRedirects/run-scenarios.sh "iOS simulator ($(xcrun simctl list devices | grep "$udid" | sed 's/^ *//'))" prototypes/HeaderRedirects/out
+
+      - name: Collect simulator logs
+        if: always()
+        run: |
+          out=prototypes/HeaderRedirects/out; mkdir -p "$out"
+          xcrun simctl spawn booted log show --last 30m --style compact --predicate 'process == "HeaderRedirects" OR eventMessage CONTAINS "headerredirects"' > "$out/simulator-log.txt" 2>&1 || true
+          tail -n 80 "$out/simulator-log.txt" || true
+          ls -la ~/Library/Logs/DiagnosticReports | tail -n 20 || true
+          cp ~/Library/Logs/DiagnosticReports/HeaderRedirects* "$out/" 2>/dev/null || true
+          cat "$out/app-stdout.txt" "$out/app-stderr.txt" 2>/dev/null | tail -n 80 || true
 
       - if: always()
         uses: actions/upload-artifact@v4

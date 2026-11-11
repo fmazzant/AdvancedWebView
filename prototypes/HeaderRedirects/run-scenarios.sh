@@ -6,7 +6,7 @@ title="$1"
 outdir="$2"
 mkdir -p "$outdir"
 
-for i in $(seq 1 120); do
+for i in $(seq 1 60); do
   status=$(curl -s http://127.0.0.1:5100/status || true)
   if [ "$status" = "done" ]; then break; fi
   sleep 5
