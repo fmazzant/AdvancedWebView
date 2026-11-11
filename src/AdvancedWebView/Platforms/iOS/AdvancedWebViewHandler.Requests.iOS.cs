@@ -1,4 +1,5 @@
 using Foundation;
+using Microsoft.Extensions.Logging;
 using WebKit;
 
 namespace Mafesoft.Maui.Controls.Handlers
@@ -31,26 +32,56 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         internal partial string? GetCurrentPageUrl() => PlatformView?.Url?.AbsoluteString;
 
+        void Log(string message) =>
+            MauiContext?.Services.GetService<ILogger<AdvancedWebViewHandler>>()?.LogWarning("{Message}", message);
+
+        // URL last loaded again without leaked headers: if WebKit still sends them, the load is stopped instead of
+        // being retried forever.
+        string? lastCleanedUrl;
+
         /// <summary>
-        /// A copy of <paramref name="request"/> without the LoadUrl headers that must not go to its origin, or null when
-        /// it carries none. WebKit removes <c>Authorization</c> on a cross-origin redirect, but keeps the other headers.
-        /// The copy keeps the method and body (a 307 redirect of PostUrlAsync). It goes through DecidePolicy again,
-        /// so Navigating is raised a second time for the same URL.
+        /// What to do with a top-level request that carries LoadUrl headers which must not go to its origin:
+        /// <c>(true, request)</c> to cancel it and load <c>request</c> (the same request without them), <c>(true, null)</c>
+        /// to only cancel it, <c>(false, null)</c> when it carries none. WebKit removes <c>Authorization</c> on a
+        /// cross-origin redirect, but keeps the other headers. The new request keeps the method and body (a 307
+        /// redirect of PostUrlAsync). It goes through DecidePolicy again, so Navigating is raised a second time.
         /// </summary>
-        NSUrlRequest? WithoutLeakedHeaders(NSUrlRequest request)
+        (bool Cancel, NSUrlRequest? Retry) CheckLeakedHeaders(NSUrlRequest request)
         {
-            if (request.Headers is not { Count: > 0 } headers)
-                return null;
+            var url = request.Url?.AbsoluteString;
+            if (request.Headers is not { Count: > 0 } headers || request.Url is not { } nsUrl)
+            {
+                lastCleanedUrl = null;
+                return (false, null);
+            }
 
             var pairs = new List<KeyValuePair<string, string>>();
             foreach (var (key, value) in headers)
                 pairs.Add(new(key.ToString(), value?.ToString() ?? string.Empty));
 
-            var leaked = RequestHeaders.FindLeakedHeaders(request.Url?.AbsoluteString, pairs);
+            var leaked = RequestHeaders.FindLeakedHeaders(url, pairs);
             if (leaked.Count == 0)
-                return null;
+            {
+                lastCleanedUrl = null;
+                return (false, null);
+            }
 
-            var clean = (NSMutableUrlRequest)request.MutableCopy();
+            if (lastCleanedUrl == url)
+            {
+                Log($"The headers of LoadUrl could not be removed from the request for {url}: the load was stopped.");
+                lastCleanedUrl = null;
+                return (true, null);
+            }
+
+            // A new request, not a mutable copy: setting Headers on a copy merges them with the old ones.
+            var clean = new NSMutableUrlRequest(nsUrl, request.CachePolicy, request.TimeoutInterval)
+            {
+                HttpMethod = request.HttpMethod,
+                MainDocumentURL = request.MainDocumentURL,
+            };
+            if (request.Body is { } body)
+                clean.Body = body;
+
             var kept = new NSMutableDictionary();
             foreach (var (key, value) in headers)
             {
@@ -58,7 +89,9 @@ namespace Mafesoft.Maui.Controls.Handlers
                     kept[key] = value;
             }
             clean.Headers = kept;
-            return clean;
+
+            lastCleanedUrl = url;
+            return (true, clean);
         }
 
         // Other parts: AdvancedWebViewHandler.NewWindow.iOS.cs and AdvancedWebViewHandler.Errors.iOS.cs.
