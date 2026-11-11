@@ -63,9 +63,9 @@ namespace Mafesoft.Maui.Controls
                     "AdvancedWebView is not attached to its handler. Call builder.UseAdvancedWebView() in MauiProgram and wait until the control is loaded (for example in the Loaded event).");
 
             if (Dispatcher is { IsDispatchRequired: true } dispatcher)
-                dispatcher.Dispatch(() => handler.LoadRequest(request));
+                dispatcher.Dispatch(() => handler.Load(request));
             else
-                handler.LoadRequest(request);
+                handler.Load(request);
         }
 
         static string ValidateUrl(string url)

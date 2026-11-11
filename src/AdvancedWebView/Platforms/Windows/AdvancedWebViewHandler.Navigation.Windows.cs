@@ -57,6 +57,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             }
 
             navigationUrls[args.NavigationId] = args.Uri;
+            RemoveLeakedHeaders(args);
             view.OnLoadStarted(args.Uri);
             // WebView2 reports no load progress: Progress moves in steps (start, content, DOM ready, done).
             view.SetProgress(0.1);
@@ -68,8 +69,24 @@ namespace Mafesoft.Maui.Controls.Handlers
                 args.Cancel = true;
         }
 
-        void OnContentLoading(CoreWebView2 sender, CoreWebView2ContentLoadingEventArgs args) =>
+        void OnContentLoading(CoreWebView2 sender, CoreWebView2ContentLoadingEventArgs args)
+        {
+            // The new document is committed, after any redirect.
+            RequestHeaders.OnCommitted(sender.Source);
             Advanced?.SetProgress(Math.Max(Advanced.Progress, 0.5));
+        }
+
+        /// <summary>
+        /// #60: WebView2 sends the LoadUrl headers again on redirects (to other origins too), reloads and back navigations.
+        /// NavigationStarting is raised for each of them, and its headers can be changed: the ones that must not go to
+        /// this origin are removed.
+        /// </summary>
+        void RemoveLeakedHeaders(CoreWebView2NavigationStartingEventArgs args)
+        {
+            var headers = args.RequestHeaders;
+            foreach (var name in RequestHeaders.FindLeakedHeaders(args.Uri, headers))
+                headers.RemoveHeader(name);
+        }
 
         void OnDOMContentLoaded(CoreWebView2 sender, CoreWebView2DOMContentLoadedEventArgs args)
         {
@@ -167,6 +184,8 @@ namespace Mafesoft.Maui.Controls.Handlers
                 ? CoreWebView2ServerCertificateErrorAction.AlwaysAllow
                 : CoreWebView2ServerCertificateErrorAction.Cancel;
         }
+
+        internal partial string? GetCurrentPageUrl() => core?.Source;
 
         // LoadUrl / PostUrlAsync. NavigateWithWebResourceRequest goes through NavigationStarting, as a link.
         internal partial void LoadRequest(WebRequest request) => _ = LoadRequestAsync(request);
