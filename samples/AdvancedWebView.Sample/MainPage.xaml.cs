@@ -206,6 +206,34 @@ public partial class MainPage : ContentPage
 	void OnNavigationFailed(object? sender, NavigationFailedEventArgs e) =>
 		Log($"Failed ({e.Error}{(e.HttpStatusCode is { } code ? $" {code}" : "")}): {e.Url} - {e.Description}");
 
+	// The process that renders the page ended: the control has already recovered, and reloads the page by default.
+	void OnWebProcessTerminated(object? sender, WebProcessTerminationEventArgs e) =>
+		Log($"Web process ended ({e.Reason}), reloading {e.Url ?? "nothing"}");
+
+	// Ends the process that renders the page, to try WebProcessTerminated.
+	void OnCrashClicked(object? sender, EventArgs e)
+	{
+#if ANDROID
+		// Android 8.0 or later. chrome://crash is the test URL Android documents for this.
+		if (WebView.Handler?.PlatformView is Android.Webkit.WebView native)
+			native.LoadUrl("chrome://crash");
+#elif WINDOWS
+		if (WebView.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.WebView2 { CoreWebView2: { } core })
+		{
+			foreach (var info in core.Environment.GetProcessInfos())
+			{
+				if (info.Kind == Microsoft.Web.WebView2.Core.CoreWebView2ProcessKind.Renderer)
+				{
+					try { System.Diagnostics.Process.GetProcessById(info.ProcessId).Kill(); }
+					catch (Exception ex) { Log($"Could not end process {info.ProcessId}: {ex.Message}"); }
+				}
+			}
+		}
+#else
+		Log("iOS and Mac Catalyst have no public way to end the web content process");
+#endif
+	}
+
 	// Rejected (the default): a real app should accept a certificate only for its own development server.
 	void OnServerCertificateError(object? sender, ServerCertificateErrorEventArgs e) =>
 		Log($"Certificate rejected: {e.Url} - {e.Description}");
