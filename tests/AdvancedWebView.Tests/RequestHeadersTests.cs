@@ -64,6 +64,31 @@ public class RequestHeadersTests
     }
 
     [Fact]
+    public void Headers_are_added_to_the_LoadUrl_navigation_only_on_their_origin()
+    {
+        var state = new RequestHeaderState();
+        state.BeginRequest("https://api.example.com/start", Headers(), isPost: false);
+
+        Assert.NotNull(state.GetPendingHeaders("https://api.example.com/start"));
+        Assert.NotNull(state.GetPendingHeaders("https://api.example.com/home")); // same-origin redirect
+        Assert.Null(state.GetPendingHeaders("https://evil.net/landing")); // cross-origin redirect
+
+        state.OnCommitted("https://api.example.com/home");
+        Assert.Null(state.GetPendingHeaders("https://api.example.com/next")); // a later link or back navigation
+    }
+
+    [Fact]
+    public void Headers_are_added_to_a_POST_but_not_sent_again_by_Reload()
+    {
+        var state = new RequestHeaderState();
+        state.BeginRequest("https://api.example.com/login", Headers(), isPost: true);
+
+        Assert.NotNull(state.GetPendingHeaders("https://api.example.com/login"));
+        state.OnCommitted("https://api.example.com/login");
+        Assert.Null(state.GetReloadHeaders("https://api.example.com/login"));
+    }
+
+    [Fact]
     public void Reload_sends_the_headers_again_on_the_page_loaded_with_them()
     {
         var state = new RequestHeaderState();

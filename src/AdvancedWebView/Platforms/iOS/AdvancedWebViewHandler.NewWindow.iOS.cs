@@ -68,10 +68,11 @@ namespace Mafesoft.Maui.Controls.Handlers
 
                         // #60: LoadUrl headers on their way to another origin (a redirect, or a reload or back navigation
                         // of a redirected page). The request is loaded again without them.
-                        if (isMainFrame && target.WithoutLeakedHeaders(navigationAction.Request) is { } clean)
+                        if (isMainFrame && target.CheckLeakedHeaders(navigationAction.Request) is { Cancel: true } check)
                         {
                             decisionHandler(WKNavigationActionPolicy.Cancel);
-                            webView.LoadRequest(clean);
+                            if (check.Retry is { } clean)
+                                webView.LoadRequest(clean);
                             return;
                         }
                     }

@@ -23,6 +23,8 @@ namespace Mafesoft.Maui.Controls.Handlers
             target.NewWindowRequested += OnNewWindowRequested;
             target.LaunchingExternalUriScheme += OnLaunchingExternalUriScheme;
             target.ServerCertificateErrorDetected += OnServerCertificateErrorDetected;
+            target.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.Document);
+            target.WebResourceRequested += OnDocumentRequested;
         }
 
         void TearDownNavigation(CoreWebView2 target)
@@ -37,6 +39,8 @@ namespace Mafesoft.Maui.Controls.Handlers
             target.NewWindowRequested -= OnNewWindowRequested;
             target.LaunchingExternalUriScheme -= OnLaunchingExternalUriScheme;
             target.ServerCertificateErrorDetected -= OnServerCertificateErrorDetected;
+            target.WebResourceRequested -= OnDocumentRequested;
+            target.RemoveWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.Document);
             cancelledNavigations.Clear();
             navigationUrls.Clear();
         }
@@ -57,7 +61,6 @@ namespace Mafesoft.Maui.Controls.Handlers
             }
 
             navigationUrls[args.NavigationId] = args.Uri;
-            RemoveLeakedHeaders(args);
             view.OnLoadStarted(args.Uri);
             // WebView2 reports no load progress: Progress moves in steps (start, content, DOM ready, done).
             view.SetProgress(0.1);
@@ -77,15 +80,18 @@ namespace Mafesoft.Maui.Controls.Handlers
         }
 
         /// <summary>
-        /// #60: WebView2 sends the LoadUrl headers again on redirects (to other origins too), reloads and back navigations.
-        /// NavigationStarting is raised for each of them, and its headers can be changed: the ones that must not go to
-        /// this origin are removed.
+        /// #60: the LoadUrl headers are added here, to each document request of the LoadUrl navigation that goes to their
+        /// origin. Given to NavigateWithWebResourceRequest instead, WebView2 sends them again on redirects to any origin,
+        /// reloads and back navigations, and removing them in NavigationStarting or cancelling the redirect there does not
+        /// stop the request.
         /// </summary>
-        void RemoveLeakedHeaders(CoreWebView2NavigationStartingEventArgs args)
+        void OnDocumentRequested(CoreWebView2 sender, CoreWebView2WebResourceRequestedEventArgs args)
         {
-            var headers = args.RequestHeaders;
-            foreach (var name in RequestHeaders.FindLeakedHeaders(args.Uri, headers))
-                headers.RemoveHeader(name);
+            if (RequestHeaders.GetPendingHeaders(args.Request.Uri) is not { } headers)
+                return;
+
+            foreach (var (name, value) in headers)
+                args.Request.Headers.SetHeader(name, value);
         }
 
         void OnDOMContentLoaded(CoreWebView2 sender, CoreWebView2DOMContentLoadedEventArgs args)
@@ -187,7 +193,8 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         internal partial string? GetCurrentPageUrl() => core?.Source;
 
-        // LoadUrl / PostUrlAsync. NavigateWithWebResourceRequest goes through NavigationStarting, as a link.
+        // LoadUrl / PostUrlAsync. Navigate and NavigateWithWebResourceRequest go through NavigationStarting, as a link.
+        // The headers are added by OnDocumentRequested, not given to WebView2 here.
         internal partial void LoadRequest(WebRequest request) => _ = LoadRequestAsync(request);
 
         async Task LoadRequestAsync(WebRequest request)
@@ -199,28 +206,23 @@ namespace Mafesoft.Maui.Controls.Handlers
                 if (core is not { } target)
                     return;
 
-                var headers = new List<string>();
-                foreach (var (name, value) in request.Headers)
-                    headers.Add($"{name}: {value}");
-
-                Windows.Storage.Streams.IRandomAccessStream? content = null;
-                if (request.Body is { } body)
+                if (request.Body is not { } body)
                 {
-                    if (request.ContentType is { } contentType)
-                        headers.Add($"Content-Type: {contentType}");
-                    var stream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
-                    using (var writer = new Windows.Storage.Streams.DataWriter(stream))
-                    {
-                        writer.WriteBytes(body);
-                        await writer.StoreAsync();
-                        writer.DetachStream();
-                    }
-                    stream.Seek(0);
-                    content = stream;
+                    target.Navigate(request.Url);
+                    return;
                 }
 
-                var nativeRequest = target.Environment.CreateWebResourceRequest(
-                    request.Url, request.Body is null ? "GET" : "POST", content, string.Join("\r\n", headers));
+                var content = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+                using (var writer = new Windows.Storage.Streams.DataWriter(content))
+                {
+                    writer.WriteBytes(body);
+                    await writer.StoreAsync();
+                    writer.DetachStream();
+                }
+                content.Seek(0);
+
+                var contentType = request.ContentType is { } type ? $"Content-Type: {type}" : string.Empty;
+                var nativeRequest = target.Environment.CreateWebResourceRequest(request.Url, "POST", content, contentType);
                 target.NavigateWithWebResourceRequest(nativeRequest);
             }
             catch (Exception ex)
