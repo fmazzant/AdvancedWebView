@@ -16,8 +16,9 @@ namespace Mafesoft.Maui.Controls.Handlers
             if (!view.OnWebProcessTerminated(WebProcessTerminationReason.Unknown, url))
                 return;
 
+            // Reload() as the app would call it: it sends the LoadUrl headers again (#60).
             if (webView.Url is not null)
-                webView.Reload();
+                MapReload(this, view, null);
             else if (!string.IsNullOrEmpty(url) && NSUrl.FromString(url) is { } nsUrl)
                 webView.LoadRequest(new NSUrlRequest(nsUrl));
         }

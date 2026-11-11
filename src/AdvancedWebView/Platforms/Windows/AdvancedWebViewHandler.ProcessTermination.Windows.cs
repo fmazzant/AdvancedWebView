@@ -31,8 +31,9 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.RenderProcessExited)
             {
+                // Reload() as the app would call it: it sends the LoadUrl headers again (#60).
                 if (view.OnWebProcessTerminated(reason, url))
-                    sender.Reload();
+                    MapReload(this, view, null);
                 else
                     sender.Navigate("about:blank");
                 return;

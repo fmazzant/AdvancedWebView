@@ -47,6 +47,8 @@ namespace Mafesoft.Maui.Controls.Handlers
                 NavigateInView(url);
         }
 
+        internal partial string? GetCurrentPageUrl() => PlatformView?.Url;
+
         // LoadUrl / PostUrlAsync. PostUrl sends the body as application/x-www-form-urlencoded, without extra headers
         // (checked by PostUrlAsync before getting here).
         internal partial void LoadRequest(WebRequest request) =>
@@ -143,15 +145,38 @@ namespace Mafesoft.Maui.Controls.Handlers
 
             AdvancedWebView? View => handler.TryGetTarget(out var h) ? h.Advanced : null;
 
-            // Links and script navigations (not LoadUrl). MAUI's base raises Navigating first: a URL cancelled there
-            // is not opened outside either.
+            // Links, script navigations and redirects (not LoadUrl or reload). MAUI's base raises Navigating first:
+            // a URL cancelled there is not opened outside either.
             public override bool ShouldOverrideUrlLoading(AWebView? view, IWebResourceRequest? request)
             {
                 if (base.ShouldOverrideUrlLoading(view, request))
                     return true;
 
-                return handler.TryGetTarget(out var owner) && owner.Advanced is { } v &&
-                    v.TryOpenExternalLink(request?.Url?.ToString(), request?.IsForMainFrame ?? true, owner.OpenExternal);
+                if (!handler.TryGetTarget(out var owner) || owner.Advanced is not { } v)
+                    return false;
+
+                var url = request?.Url?.ToString();
+                var isMainFrame = request?.IsForMainFrame ?? true;
+                if (v.TryOpenExternalLink(url, isMainFrame, owner.OpenExternal))
+                    return true;
+
+                // IsRedirect needs Android 7 (API 24). On Android 6 redirects look like links: their headers are not checked.
+                var isRedirect = OperatingSystem.IsAndroidVersionAtLeast(24) && request?.IsRedirect == true;
+                if (isMainFrame && !isRedirect)
+                    owner.RequestHeaders.BeginOtherNavigation();
+
+                // #60: Android sends the LoadUrl headers to the redirect target, also on another origin. The redirect is
+                // dropped and its target loaded without them. Only GET: a 307 keeps the method and body, LoadUrl cannot.
+                // Navigating was raised above for this URL, and MAUI does not raise it again when the load starts.
+                if (isMainFrame && isRedirect && view is not null && request is not null &&
+                    string.Equals(request.Method, "GET", StringComparison.OrdinalIgnoreCase) &&
+                    owner.RequestHeaders.MustDropOnRedirect(url))
+                {
+                    view.LoadUrl(url!);
+                    return true;
+                }
+
+                return false;
             }
 
             // The renderer process crashed or was killed (#53). MAUI's base raises ProcessTerminated and returns false,
@@ -168,6 +193,9 @@ namespace Mafesoft.Maui.Controls.Handlers
             public override void OnPageStarted(AWebView? view, string? url, Bitmap? favicon)
             {
                 base.OnPageStarted(view, url, favicon);
+                // Raised when the page is committed, after any redirect.
+                if (handler.TryGetTarget(out var owner))
+                    owner.RequestHeaders.OnCommitted(url);
                 mainFrameUrl = url;
                 View?.OnLoadStarted(url);
             }
