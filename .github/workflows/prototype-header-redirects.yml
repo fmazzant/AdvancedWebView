@@ -113,13 +113,13 @@ jobs:
           echo "Simulator: $udid"
           xcrun simctl boot "$udid" || true
           xcrun simctl bootstatus "$udid" -b
-          app=$(find prototypes/HeaderRedirects/App/bin/Debug/net10.0-ios/$RID -maxdepth 1 -name '*.app' | head -n 1)
+          app=$(find prototypes/HeaderRedirects/App/bin/Release/net10.0-ios/$RID -maxdepth 1 -name '*.app' | head -n 1)
           xcrun simctl install "$udid" "$app"
           out=prototypes/HeaderRedirects/out; mkdir -p "$out"
           curl -s http://127.0.0.1:5100/status; echo
           xcrun simctl launch --stdout="$PWD/$out/app-stdout.txt" --stderr="$PWD/$out/app-stderr.txt" "$udid" com.mafesoft.headerredirects
           sleep 60
-          xcrun simctl io "$udid" screenshot "$out/screen-60s.png" || true
+          xcrun simctl io "$udid" screenshot --display=1 "$out/screen-60s.png" || true
           bash prototypes/HeaderRedirects/run-scenarios.sh "iOS simulator ($(xcrun simctl list devices | grep "$udid" | sed 's/^ *//'))" prototypes/HeaderRedirects/out
 
       - name: Collect simulator logs
@@ -130,6 +130,7 @@ jobs:
           tail -n 80 "$out/simulator-log.txt" || true
           ls -la ~/Library/Logs/DiagnosticReports | tail -n 20 || true
           cp ~/Library/Logs/DiagnosticReports/HeaderRedirects* "$out/" 2>/dev/null || true
+          head -c 6000 "$out"/HeaderRedirects*.ips 2>/dev/null || true
           cat "$out/app-stdout.txt" "$out/app-stderr.txt" 2>/dev/null | tail -n 80 || true
 
       - if: always()
