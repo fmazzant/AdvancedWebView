@@ -24,7 +24,7 @@ namespace Mafesoft.Maui.Controls
 
         internal WebViewBridge BridgeCore => bridgeCore ??= new WebViewBridge(Bridge, ExecuteBridgeScriptAsync, OnMessageReceived, LogWarning);
 
-        void LogWarning(string message) =>
+        internal void LogWarning(string message) =>
             Handler?.MauiContext?.Services.GetService<ILogger<AdvancedWebView>>()?.LogWarning("{Message}", message);
 
         /// <summary>

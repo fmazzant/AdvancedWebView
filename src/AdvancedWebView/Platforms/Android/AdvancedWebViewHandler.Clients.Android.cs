@@ -244,6 +244,17 @@ namespace Mafesoft.Maui.Controls.Handlers
             {
                 base.OnPageFinished(view, url);
                 View?.OnLoadFinished(view?.Url ?? url);
+                if (handler.TryGetTarget(out var owner))
+                    owner.httpAuthenticationAttempts.Reset();
+            }
+
+            // HTTP authentication (#54). Without a HttpAuthenticationRequested handler, the base cancels it as before.
+            public override void OnReceivedHttpAuthRequest(AWebView? view, HttpAuthHandler? authHandler, string? host, string? realm)
+            {
+                if (authHandler is not null && handler.TryGetTarget(out var owner) && owner.Advanced is { HasHttpAuthenticationHandler: true } advanced)
+                    owner.AnswerHttpAuthentication(advanced, authHandler, host ?? string.Empty, realm);
+                else
+                    base.OnReceivedHttpAuthRequest(view, authHandler, host, realm);
             }
 
             // Also called for history.pushState / replaceState, which do not start a page load.

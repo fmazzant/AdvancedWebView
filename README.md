@@ -20,6 +20,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 | `tel:`, `mailto:`, `intent://` links | Error page | ✔ Opened by the system; `InternalHosts` sends other sites to the browser. See [External links](#external-links) |
 | Load failures | No error details | ✔ Typed errors (no internet, timeout, SSL, HTTP status) and a custom `ErrorPageHtml`. See [Load failures and error page](#load-failures-and-error-page) |
 | Web process crashes | Android ends the app, iOS shows a blank page | ✔ `WebProcessTerminated`; the view recovers and reloads the page. See [Web process crashes](#web-process-crashes) |
+| HTTP authentication (Basic, Digest, NTLM) | Cancelled on Android and iOS | ✔ `HttpAuthenticationRequested` with the app's credentials. See [HTTP authentication](#http-authentication) |
 | Page state | ✘ | ✔ Bindable `Progress`, `IsLoading`, `Title`, `CurrentUrl`. See [Page state](#page-state) |
 | Platform settings (zoom, text zoom, transparency, mixed content, cache mode, dark mode…) | ✘ | ✔ See [Properties](#properties) |
 | Remote debugging | ✘ | ✔ `IsInspectable`. See [Debugging the page](#debugging-the-page) |
@@ -362,6 +363,35 @@ webView.WebProcessTerminated += (s, e) =>
 - The event is raised after the control has recovered, on the main thread. JavaScript state is lost on every platform; with `Reload`, `Navigated` follows.
 - MAUI's own `ProcessTerminated` is still raised where MAUI raises it (Android, Windows).
 - To try it, the sample app has a **Crash** button: on Android it loads `chrome://crash`, on Windows it ends the renderer processes. iOS has no public way to end the process.
+
+### HTTP authentication
+
+Pages protected by HTTP authentication (Basic, Digest, NTLM, Negotiate) raise `HttpAuthenticationRequested`. Answer with the credentials, or cancel:
+
+```csharp
+webView.HttpAuthenticationRequested += async (s, e) =>
+{
+    // e.Host, e.Realm, e.Scheme, e.IsProxy, e.PreviousFailureCount
+    if (e.PreviousFailureCount >= 3)
+    {
+        e.Cancel(); // stop after three wrong attempts
+        return;
+    }
+
+    using var deferral = e.GetDeferral(); // before the first await
+    var login = await ShowLoginAsync(e.Host, e.Realm); // your own dialog
+    if (login is null)
+        e.Cancel();
+    else
+        e.Proceed(login.User, login.Password);
+};
+```
+
+- Without a handler, the platform's default applies: Android and iOS send no credentials, WebView2 on Windows shows its own login dialog.
+- `Cancel()` sends no credentials: the page shows the server's answer, usually a 401 page.
+- The platform keeps accepted credentials for the session, so the event is usually raised once per site.
+- What each platform reports: `Scheme` is `Unknown` on Android, which reports host and realm only. `IsProxy` is reported on iOS and Mac Catalyst only. `PreviousFailureCount` comes from iOS; on Android and Windows the control counts the attempts for the host and realm until a page loads.
+- Basic sends the password base64-encoded, not encrypted: use it only over https.
 
 ### Platform delegates
 

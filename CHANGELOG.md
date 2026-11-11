@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`WebProcessTerminated`:** the control recovers when the process that renders the page crashes or is ended by the system, and loads the page again by default (`Reload`). Before, Android ended the whole app and iOS left a blank page. On Android and when the WebView2 browser process ends, the native web view is replaced with a new one ([#53](https://github.com/fmazzant/AdvancedWebView/issues/53)).
+- **`HttpAuthenticationRequested`:** pages protected by HTTP authentication (Basic, Digest, NTLM, Negotiate) can be opened with the app's credentials, also after an `await` (`GetDeferral`). `PreviousFailureCount` lets the app stop after wrong credentials. Without a handler nothing changes ([#54](https://github.com/fmazzant/AdvancedWebView/issues/54)).
 
 ### Changed
 
