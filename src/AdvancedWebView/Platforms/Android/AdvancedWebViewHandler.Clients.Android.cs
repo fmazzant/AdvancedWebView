@@ -179,6 +179,17 @@ namespace Mafesoft.Maui.Controls.Handlers
                 return false;
             }
 
+            // The renderer process crashed or was killed (#53). MAUI's base raises ProcessTerminated and returns false,
+            // which would end the whole app: true tells Android the app handles it (the handler replaces the WebView).
+            [System.Runtime.Versioning.SupportedOSPlatform("android26.0")]
+            public override bool OnRenderProcessGone(AWebView? view, RenderProcessGoneDetail? detail)
+            {
+                base.OnRenderProcessGone(view, detail);
+                if (handler.TryGetTarget(out var owner))
+                    owner.OnRenderProcessGone(view, detail);
+                return true;
+            }
+
             public override void OnPageStarted(AWebView? view, string? url, Bitmap? favicon)
             {
                 base.OnPageStarted(view, url, favicon);

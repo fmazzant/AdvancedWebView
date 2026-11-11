@@ -19,6 +19,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 | `target="_blank"` and `window.open` | No control | ✔ `NewWindowRequested`: same view, browser or cancel. See [New windows](#new-windows) |
 | `tel:`, `mailto:`, `intent://` links | Error page | ✔ Opened by the system; `InternalHosts` sends other sites to the browser. See [External links](#external-links) |
 | Load failures | No error details | ✔ Typed errors (no internet, timeout, SSL, HTTP status) and a custom `ErrorPageHtml`. See [Load failures and error page](#load-failures-and-error-page) |
+| Web process crashes | Android ends the app, iOS shows a blank page | ✔ `WebProcessTerminated`; the view recovers and reloads the page. See [Web process crashes](#web-process-crashes) |
 | HTTP authentication (Basic, Digest, NTLM) | Cancelled on Android and iOS | ✔ `HttpAuthenticationRequested` with the app's credentials. See [HTTP authentication](#http-authentication) |
 | Page state | ✘ | ✔ Bindable `Progress`, `IsLoading`, `Title`, `CurrentUrl`. See [Page state](#page-state) |
 | Platform settings (zoom, text zoom, transparency, mixed content, cache mode, dark mode…) | ✘ | ✔ See [Properties](#properties) |
@@ -340,6 +341,28 @@ webView.ServerCertificateError += (s, e) => e.Proceed = false; // default: rejec
 - `ErrorPageHtml` placeholders: `{{url}}`, `{{description}}`, `{{error}}`, `{{statusCode}}`. They are HTML-encoded. The page is shown for every error except `Cancelled`. Set `e.ShowErrorPage = false` to keep the current page.
 - `AdvancedWebView.retry()` loads the failed URL again as a normal navigation, so it raises `Navigating`. It needs JavaScript and the bridge. The error page is local content, so it can use the bridge whatever `Bridge.AllowedOrigins` says.
 - Invalid certificates are rejected unless a `ServerCertificateError` handler sets `e.Proceed = true`. Do this only during development, for example for a local server with a self-signed certificate. Accepting every certificate exposes the connection to interception, and Google Play rejects apps that do it.
+
+### Web process crashes
+
+The page is rendered by a separate process, which can crash or be ended by the system (for example for low memory). Without handling, Android ends the whole app and iOS leaves a blank page. AdvancedWebView recovers on every platform and loads the page again:
+
+```csharp
+webView.WebProcessTerminated += (s, e) =>
+{
+    // e.Reason: Crashed, KilledByOs or Unknown; e.Url: the page that was shown
+    e.Reload = false; // to stay on an empty page instead, for example to show your own message
+};
+```
+
+| Platform | What happens |
+|---|---|
+| Android 8.0+ | The `WebView` cannot be used any more: the control replaces it with a new one, in the same place of the layout. History and page state are lost. Android 6 and 7 do not report the crash, and the app is ended. |
+| iOS, Mac Catalyst | The `WKWebView` is kept and loads the page again. WebKit does not say why the process ended (`Unknown`). |
+| Windows | Renderer process: the page is loaded again in the same `WebView2`. Browser process: the control replaces the `WebView2` with a new one, as on Android. |
+
+- The event is raised after the control has recovered, on the main thread. JavaScript state is lost on every platform; with `Reload`, `Navigated` follows.
+- MAUI's own `ProcessTerminated` is still raised where MAUI raises it (Android, Windows).
+- To try it, the sample app has a **Crash** button: on Android it loads `chrome://crash`, on Windows it ends the renderer processes. iOS has no public way to end the process.
 
 ### HTTP authentication
 

@@ -90,6 +90,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             SetUpDownloads(created);
             SetUpPermissions(created);
             SetUpFullscreen(created);
+            SetUpProcessTermination(created);
             SetUpHttpAuthentication(created);
 
             foreach (var key in CoreSettings)
@@ -106,6 +107,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownDownloads(current);
             TearDownPermissions(current);
             TearDownFullscreen(current);
+            TearDownProcessTermination(current);
             TearDownHttpAuthentication(current);
             WebViewCookieManager.Unregister(current);
             core = null;
