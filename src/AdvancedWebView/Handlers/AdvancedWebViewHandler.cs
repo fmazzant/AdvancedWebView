@@ -37,11 +37,15 @@ namespace Mafesoft.Maui.Controls.Handlers
 #endif
             };
 
-        /// <summary>Command mapper: the MAUI WebView commands plus <see cref="AdvancedWebView.ClearCache"/>.</summary>
+        /// <summary>
+        /// Command mapper: the MAUI WebView commands plus <see cref="AdvancedWebView.ClearCache"/>, and a
+        /// <c>Reload</c> that sends the <c>LoadUrl</c> headers again (see AdvancedWebViewHandler.Headers.cs).
+        /// </summary>
         public static new readonly CommandMapper<AdvancedWebView, AdvancedWebViewHandler> CommandMapper =
             new(WebViewHandler.CommandMapper)
             {
                 [nameof(AdvancedWebView.ClearCache)] = MapClearCache,
+                [nameof(IWebView.Reload)] = MapReload,
             };
 
         /// <summary>Creates the handler with the default mappers.</summary>
@@ -75,7 +79,7 @@ namespace Mafesoft.Maui.Controls.Handlers
         /// <summary>Opens the system print dialog (PrintAsync). Must be called on the main thread.</summary>
         internal partial Task PrintAsync(string jobName);
 
-        /// <summary>Loads a request from LoadUrl/PostUrlAsync. Must be called on the main thread.</summary>
+        /// <summary>Loads a request on the platform view (see <see cref="Load"/>). Must be called on the main thread.</summary>
         internal partial void LoadRequest(WebRequest request);
 
         /// <summary>Called after each page load (Navigated). Android uses it when document-start scripts are not supported.</summary>

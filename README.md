@@ -30,7 +30,7 @@ AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Cata
 ## Requirements
 
 - .NET 10
-- Android 5.0 (API 23) or later
+- Android 6.0 (API 23) or later
 - iOS 15 or later
 - Mac Catalyst 15 (macOS 12) or later. The .NET 10 Mac Catalyst workload 27 builds apps for Mac Catalyst 17 (macOS 14) or later only: set `SupportedOSPlatformVersion` to 17.0 for `net10.0-maccatalyst` in the app project
 - Windows 10 version 1809 (build 17763) or later, with the WebView2 Runtime
@@ -473,17 +473,18 @@ await webView.PostUrlAsync("https://example.com/login", new FormUrlEncodedConten
 
 - `Navigating` and `Navigated` are raised as for a link, and the external-link rules apply.
 - The headers are never sent with the page's resources (images, scripts, API calls) or with links the user taps. For an authenticated session, prefer a cookie (`Cookies`).
-- **Redirects, reload and back navigation can send the headers again.** On Windows, tested with WebView2 and `LoadUrl`:
+- **The headers go only to the site of the URL** (same scheme, host and port), on every platform:
 
   | Case | Headers sent? |
   |---|---|
-  | Redirect (302, 307) to the same site or **to another site** | Yes |
-  | `Reload()` | Yes, except when the page was the first one the web view loaded (see below) |
-  | `GoBack()` / `GoForward()` to the page | Yes |
+  | Redirect (301, 302, 303, 307, 308) to the same site | Yes |
+  | Redirect to **another site**, or from https to http | **No** |
+  | `Reload()` of the page, while it is on the site of the URL | Yes: the request is sent again, the history does not change |
+  | The page's resources, links, other pages of the site | No |
+  | `GoBack()` / `GoForward()` to the page | Up to the engine: Android sends them again (same site only), Windows does not, iOS usually shows the page from memory without a request |
 
-  Android and iOS have not been verified yet ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)).
-- **A redirect can send your headers to another site.** If the server you call can redirect elsewhere, an `Authorization` header follows the redirect. Send secrets only to servers you trust not to redirect them.
-- **Windows: `Reload()` drops the headers on the first page.** When `LoadUrl` is the first page the web view loads (no `Source` set), `Reload()` loads it again without the headers. To keep them, call `LoadUrl` again instead of `Reload()`.
+  How the redirect to another site is handled: on Windows the library adds the headers only to the requests for the site of the URL. On Android the redirect is cancelled and its target loaded without the headers: `Navigated` is also raised for the URL that redirected, and Android 6 (API 23) cannot tell a redirect from a link, so there the headers still follow it. On iOS the request is loaded again without the headers (WebKit only removes `Authorization`): `Navigated` is raised with `Failure` for the cancelled request, then `Navigating` again for the new one.
+- `Reload()` after `PostUrlAsync` is the engine's own reload.
 - Android only posts `application/x-www-form-urlencoded` bodies, and cannot add headers to a POST. `PostUrlAsync` throws `NotSupportedException` otherwise. iOS supports any content type and headers.
 - Call these methods after the control is loaded (for example in its `Loaded` event). Before that, they throw `InvalidOperationException`.
 
