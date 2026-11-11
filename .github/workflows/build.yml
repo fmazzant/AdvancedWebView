@@ -20,11 +20,12 @@ jobs:
         with:
           global-json-file: global.json
 
-      # The latest .NET 10 iOS workload (27.1.x) requires Xcode 27.1.
-      - name: Select Xcode 27.1
+      # The MAUI workload installed below is always the latest, and it requires the matching
+      # (newest) Xcode, so select the newest one on the runner instead of pinning a version.
+      - name: Select latest Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '27.1'
+          xcode-version: latest-stable
 
       - name: Setup Java
         uses: actions/setup-java@v4
