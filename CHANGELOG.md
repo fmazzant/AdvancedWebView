@@ -13,7 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`Reload()` sends the headers again** while the page loaded by `LoadUrl` is on their origin, on every platform. Before, Windows dropped them on the first page of the web view and Android after a redirect. The request is sent again and the history does not change.
 - **Windows:** back and forward navigation no longer send the headers again: the library now adds them to the requests itself instead of giving them to WebView2.
 
-## [1.4.0] - Unreleased
+## [1.4.0.1] - 2026-11-08
+
+### Added
+
+- **PDF and printing:** `ExportPdfAsync(WebPdfOptions)` exports the page as a PDF split into pages (paper size, orientation, margin), without UI. `PrintAsync(jobName)` opens the system print dialog. Both work on every platform ([#26](https://github.com/fmazzant/AdvancedWebView/issues/26)).
+- NuGet package icon ([#50](https://github.com/fmazzant/AdvancedWebView/issues/50)).
+- README: a table that compares AdvancedWebView with the MAUI `WebView`.
+
+### Changed
+
+- **Android:** the minimum version is now Android 6.0 (API 23); it was Android 5.0 (API 21).
+
+### Fixed
+
+- Sample app: the script of the local test page stopped at its first line in Chromium web views (a global `status` variable is `window.status`), so its buttons did nothing.
+
+## [1.4.0] - 2026-11-05
 
 The platforms release.
 
@@ -22,14 +38,8 @@ The platforms release.
 - **Mac Catalyst:** the library now targets `net10.0-maccatalyst` (Mac Catalyst 15 or later). It shares the iOS `WKWebView` implementation, so the iOS features work on the Mac. The README lists the App Sandbox entitlements the web view needs, and the sample app runs on the Mac.
 - **Windows (WebView2):** the library now targets `net10.0-windows10.0.19041.0` (Windows 10 1809 or later). The bridge (iframes included), user scripts and styles, page state, new windows, external links, load failures and the error page, certificate errors, `LoadUrl` with headers and `PostUrlAsync`, downloads, permissions, fullscreen, `IsInspectable` (Edge DevTools), display options, cookies and `ClearWebsiteDataAsync` work on Windows. The README lists the differences. The Windows target builds on Windows only.
 - **Screenshots:** `CaptureAsync()` and `CaptureAsync(WebCaptureArea)` capture the part of the page on screen (`Viewport`) or the whole page (`FullPage`) as MAUI's `IScreenshotResult` (PNG or JPEG), on every platform. Android needs `AdvancedWebView.EnableFullPageCapture()` for full pages.
-- **PDF and printing:** `ExportPdfAsync(WebPdfOptions)` exports the page as a PDF split into pages (paper size, orientation, margin), without UI. `PrintAsync(jobName)` opens the system print dialog. Both work on every platform.
 
-### Fixed
-
-- Sample app: the script of the local test page stopped at its first line in Chromium web views (a global `status` variable is `window.status`), so its buttons did nothing.
-- Docs: `LoadUrl` and `PostUrlAsync` said the headers go with the first request only. On Windows they are also sent on redirects (to other sites too), `Reload()` and back navigation, and `Reload()` drops them on the first page the web view loaded. The README and the XML docs now say so ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)).
-
-## [1.3.0] - Unreleased
+## [1.3.0] - 2026-11-04
 
 The platform capabilities release.
 
@@ -47,7 +57,7 @@ The platform capabilities release.
 
 - Android: pinch zoom is now on by default (`ZoomEnabled = true`), without the on-screen zoom buttons. Set `ZoomEnabled = false` for the previous behavior.
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2026-11-04
 
 The navigation release.
 
@@ -69,7 +79,7 @@ The navigation release.
 
 - CI runs the test project again.
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-11-04
 
 The JavaScript bridge release: the page and the app can talk to each other, with local HTML and with the remote sites you allow.
 
@@ -116,5 +126,10 @@ First release for .NET 10.
 
 - Mixed content and file access are off by default on Android.
 
+[1.5.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.4.0.1...HEAD
+[1.4.0.1]: https://github.com/fmazzant/AdvancedWebView/compare/v1.4.0...v1.4.0.1
+[1.4.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/fmazzant/AdvancedWebView/releases/tag/v1.0.0
