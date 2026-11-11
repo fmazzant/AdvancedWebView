@@ -90,7 +90,8 @@ jobs:
         run: |
           rid=iossimulator-$( [ "$(uname -m)" = "arm64" ] && echo arm64 || echo x64 )
           echo "RID=$rid" >> "$GITHUB_ENV"
-          dotnet build prototypes/HeaderRedirects/App/HeaderRedirects.csproj -c Debug \
+          # Release: a Debug build tries to attach to the IDE debugger (127.0.0.1:10000) and exits.
+          dotnet build prototypes/HeaderRedirects/App/HeaderRedirects.csproj -c Release \
             -f net10.0-ios -p:TargetFrameworks=net10.0-ios -p:RuntimeIdentifier=$rid
 
       - name: Start echo server
