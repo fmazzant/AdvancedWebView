@@ -15,8 +15,10 @@ namespace Mafesoft.Maui.Controls
         /// <see cref="WebView.Navigating"/> and <see cref="WebView.Navigated"/> are raised as for a link.
         /// </summary>
         /// <remarks>
-        /// The headers are sent with this request only: not with the page's resources (images, scripts, API calls)
-        /// and not with later navigations, such as links the user taps.
+        /// The headers are not sent with the page's resources (images, scripts, API calls) or with links the user taps.
+        /// They can be sent again on redirects, also to another site, and on <c>Reload()</c> and back navigation.
+        /// On Windows, <c>Reload()</c> drops them when this was the first page the web view loaded.
+        /// See the README section "Headers and POST".
         /// </remarks>
         /// <exception cref="ArgumentException"><paramref name="url"/> is not an absolute URL.</exception>
         /// <exception cref="InvalidOperationException">The control is not attached to its handler yet.</exception>
@@ -30,6 +32,7 @@ namespace Mafesoft.Maui.Controls
         /// <remarks>
         /// Android only sends <c>application/x-www-form-urlencoded</c> bodies, without extra headers: that is what its
         /// web view supports. iOS sends any content type and the headers.
+        /// Headers can be sent again on redirects, also to another site: see the remarks of <see cref="LoadUrl"/>.
         /// </remarks>
         /// <exception cref="ArgumentException"><paramref name="url"/> is not an absolute URL.</exception>
         /// <exception cref="NotSupportedException">Android: the content is not form-urlencoded, or headers were given.</exception>

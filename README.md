@@ -441,7 +441,18 @@ await webView.PostUrlAsync("https://example.com/login", new FormUrlEncodedConten
 ```
 
 - `Navigating` and `Navigated` are raised as for a link, and the external-link rules apply.
-- The headers go with this request only. They are not sent with the page's resources (images, scripts, API calls) or with later navigations, such as links the user taps. For an authenticated session, prefer a cookie (`Cookies`).
+- The headers are never sent with the page's resources (images, scripts, API calls) or with links the user taps. For an authenticated session, prefer a cookie (`Cookies`).
+- **Redirects, reload and back navigation can send the headers again.** On Windows, tested with WebView2 and `LoadUrl`:
+
+  | Case | Headers sent? |
+  |---|---|
+  | Redirect (302, 307) to the same site or **to another site** | Yes |
+  | `Reload()` | Yes, except when the page was the first one the web view loaded (see below) |
+  | `GoBack()` / `GoForward()` to the page | Yes |
+
+  Android and iOS have not been verified yet ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)).
+- **A redirect can send your headers to another site.** If the server you call can redirect elsewhere, an `Authorization` header follows the redirect. Send secrets only to servers you trust not to redirect them.
+- **Windows: `Reload()` drops the headers on the first page.** When `LoadUrl` is the first page the web view loads (no `Source` set), `Reload()` loads it again without the headers. To keep them, call `LoadUrl` again instead of `Reload()`.
 - Android only posts `application/x-www-form-urlencoded` bodies, and cannot add headers to a POST. `PostUrlAsync` throws `NotSupportedException` otherwise. iOS supports any content type and headers.
 - Call these methods after the control is loaded (for example in its `Loaded` event). Before that, they throw `InvalidOperationException`.
 

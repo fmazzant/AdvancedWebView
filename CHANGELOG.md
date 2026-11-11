@@ -19,6 +19,7 @@ The platforms release.
 ### Fixed
 
 - Sample app: the script of the local test page stopped at its first line in Chromium web views (a global `status` variable is `window.status`), so its buttons did nothing.
+- Docs: `LoadUrl` and `PostUrlAsync` said the headers go with the first request only. On Windows they are also sent on redirects (to other sites too), `Reload()` and back navigation, and `Reload()` drops them on the first page the web view loaded. The README and the XML docs now say so ([#60](https://github.com/fmazzant/AdvancedWebView/issues/60)).
 
 ## [1.3.0] - Unreleased
 
