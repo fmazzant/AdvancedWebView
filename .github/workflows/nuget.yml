@@ -1,6 +1,15 @@
-name: Publish to NuGet
+name: NuGet
 
 # Runs when a tag such as v1.2.3 is pushed. The tag sets the package version.
+#
+# Authentication: NuGet Trusted Publishing (https://learn.microsoft.com/nuget/nuget-org/trusted-publishing),
+# no long-lived API key. The NuGet/login step exchanges the GitHub OIDC token for a temporary API key (valid 1 hour).
+# Requires:
+# - on nuget.org (Account > Trusted Publishing) a policy with repository owner "fmazzant", repository "AdvancedWebView",
+#   workflow file "nuget.yml" (renaming this file breaks publishing) and environment "production";
+# - the GitHub environment "production" with the secret NUGET_USER: the nuget.org username (not the email)
+#   of the user who created the policy.
+
 on:
   push:
     tags: [ 'v*.*.*' ]
@@ -11,16 +20,21 @@ jobs:
     # Windows: the only host that builds every target. The Windows target (WinUI) needs Windows,
     # and the Android, iOS and Mac Catalyst libraries compile there too (no Mac is needed for a library).
     runs-on: windows-latest
+    # Must match the environment of the NuGet Trusted Publishing policy
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # needed by NuGet/login (Trusted Publishing)
 
     defaults:
       run:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -45,11 +59,17 @@ jobs:
           if [ "$GITHUB_REF_TYPE" != "tag" ]; then VERSION=""; fi
           dotnet pack src/AdvancedWebView/AdvancedWebView.csproj -c Release -o artifacts ${VERSION:+-p:Version=$VERSION}
 
+      - name: NuGet login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       # bash expands the glob: on Windows, NuGet's own wildcard handling does not resolve "artifacts/*.nupkg"
       # (forward slash). The matching .snupkg next to each .nupkg is pushed automatically.
       - name: Publish on NuGet
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           shopt -s nullglob
           packages=(artifacts/*.nupkg)
