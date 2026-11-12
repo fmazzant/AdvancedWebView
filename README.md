@@ -1,8 +1,12 @@
 # AdvancedWebView
 
-[![Build](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml/badge.svg)](https://github.com/fmazzant/AdvancedWebView/actions/workflows/build.yml)
-[![NuGet](https://img.shields.io/nuget/v/Mafesoft.Maui.AdvancedWebView.svg)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/Mafesoft.Maui.AdvancedWebView.svg)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
+[![NuGet](https://img.shields.io/nuget/v/Mafesoft.Maui.AdvancedWebView?style=flat-square&label=nuget)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
+[![Downloads](https://img.shields.io/nuget/dt/Mafesoft.Maui.AdvancedWebView?style=flat-square&label=downloads)](https://www.nuget.org/packages/Mafesoft.Maui.AdvancedWebView)
+[![Build](https://img.shields.io/github/actions/workflow/status/fmazzant/AdvancedWebView/ci.yml?branch=main&style=flat-square&label=build)](https://github.com/fmazzant/AdvancedWebView/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/fmazzant/AdvancedWebView/blob/main/LICENSE)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/fmazzant/AdvancedWebView/codeql.yml?branch=main&style=flat-square&label=codeql)](https://github.com/fmazzant/AdvancedWebView/actions/workflows/codeql.yml)
+[![.NET](https://img.shields.io/badge/.NET-10%20(MAUI)-512BD4?style=flat-square)](#)
+[![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Mac%20Catalyst%20%7C%20Windows-lightgrey?style=flat-square)](#)
 
 AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Catalyst and Windows). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
 
