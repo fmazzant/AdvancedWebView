@@ -1,0 +1,53 @@
+name: npm
+
+# Publishes the TypeScript typings of the JavaScript bridge (typescript/) as @mafesoft/advancedwebview-types.
+# Runs when a tag such as v1.2.3 is pushed, like nuget.yml: the tag sets the package version.
+# A manual run (workflow_dispatch) only type-checks and packs, without publishing.
+#
+# Authentication: npm Trusted Publishing (https://docs.npmjs.com/trusted-publishers), no long-lived token.
+# Requires on npmjs.com, in the settings of the package @mafesoft/advancedwebview-types, a trusted publisher with
+# repository owner "fmazzant", repository "AdvancedWebView", workflow file "npm.yml" (renaming this file breaks
+# publishing) and environment "production".
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Must match the environment of the npm trusted publisher
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # needed by npm Trusted Publishing
+
+    defaults:
+      run:
+        working-directory: typescript
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      - name: Type-check
+        run: npx --yes -p typescript@5 tsc -p test
+
+      - name: Set version
+        if: github.ref_type == 'tag'
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+
+      - name: Pack
+        run: |
+          cp ../LICENSE .
+          npm pack --dry-run
+
+      - name: Publish on npm
+        if: github.ref_type == 'tag'
+        run: npm publish --access public

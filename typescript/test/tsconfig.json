@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [ "ES2017", "DOM" ],
+    "strict": true,
+    "noEmit": true,
+    "types": []
+  },
+  "files": [ "../advancedwebview.d.ts", "usage.ts" ]
+}
