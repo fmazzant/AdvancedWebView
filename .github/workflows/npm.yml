@@ -1,0 +1,70 @@
+name: npm
+
+# Publishes the TypeScript typings of the JavaScript bridge (typescript/) as @mafesoft/advancedwebview-types.
+# Runs only by hand (Actions > npm > Run workflow), never on a tag or a push.
+# By default it only type-checks and packs; tick "publish" and set the version (e.g. 1.5.1) to publish on npm.
+#
+# Authentication: npm Trusted Publishing (https://docs.npmjs.com/trusted-publishers), no long-lived token.
+# Requires on npmjs.com, in the settings of the package @mafesoft/advancedwebview-types, a trusted publisher with
+# repository owner "fmazzant", repository "AdvancedWebView", workflow file "npm.yml" (renaming this file breaks
+# publishing) and environment "production".
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version, e.g. 1.5.1 (required to publish)'
+        required: false
+        type: string
+      publish:
+        description: 'Publish on npm'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Must match the environment of the npm trusted publisher
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # needed by npm Trusted Publishing
+
+    defaults:
+      run:
+        working-directory: typescript
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      - name: Type-check
+        run: npx --yes -p typescript@5 tsc -p test
+
+      - name: Set version
+        if: inputs.version != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: npm version "${VERSION#v}" --no-git-tag-version
+
+      - name: Pack
+        run: |
+          cp ../LICENSE .
+          npm pack --dry-run
+
+      - name: Publish on npm
+        if: inputs.publish
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::Set the version to publish"
+            exit 1
+          fi
+          npm publish --access public

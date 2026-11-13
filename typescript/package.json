@@ -1,0 +1,29 @@
+{
+  "name": "@mafesoft/advancedwebview-types",
+  "version": "0.0.0",
+  "description": "TypeScript typings for the JavaScript bridge (window.AdvancedWebView) of AdvancedWebView, the .NET MAUI WebView (Mafesoft.Maui.AdvancedWebView).",
+  "types": "advancedwebview.d.ts",
+  "files": [
+    "advancedwebview.d.ts"
+  ],
+  "keywords": [
+    "advancedwebview",
+    "maui",
+    "dotnet-maui",
+    "webview",
+    "bridge",
+    "typescript",
+    "types"
+  ],
+  "author": "Federico Mazzanti",
+  "license": "MIT",
+  "homepage": "https://github.com/fmazzant/AdvancedWebView#javascript-bridge",
+  "bugs": {
+    "url": "https://github.com/fmazzant/AdvancedWebView/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fmazzant/AdvancedWebView.git",
+    "directory": "typescript"
+  }
+}

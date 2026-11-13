@@ -615,6 +615,29 @@ webView.UserStyleSheets.Add(".cookie-banner { display: none !important; }");
 
 Scripts run on every page load; changes apply from the next load. `DocumentStart` scripts run before the page's own scripts, `DocumentEnd` scripts (the default) when the DOM is ready. `MainFrameOnly` (default `true`) keeps a script out of iframes. A script restricted with `AllowedOrigins` is wrapped in an `if` block: `var` and functions stay global, top-level `let`/`const` become block-scoped.
 
+### TypeScript
+
+Web developers get autocompletion and type checking for `window.AdvancedWebView` from [`typescript/advancedwebview.d.ts`](typescript/advancedwebview.d.ts). Copy the file into the web project, inside a folder covered by `include` in `tsconfig.json`, or reference it from one file:
+
+```ts
+/// <reference path="./advancedwebview.d.ts" />
+```
+
+```ts
+interface User { id: number; name: string; }
+
+const user = await AdvancedWebView.invoke<User>("getUser", { id: 1 });
+AdvancedWebView.addEventListener<{ count: number }>("message", e => console.log(e.data.count));
+
+try {
+  await AdvancedWebView.invoke("missing");
+} catch (e) {
+  const err = e as AdvancedWebViewError; // err.code: "MethodNotFound", "Timeout", ... or your BridgeException code
+}
+```
+
+The file only declares types (the app injects the bridge), so there is nothing to import at run time. The folder [`typescript/`](typescript) is also ready to be published on npm as `@mafesoft/advancedwebview-types`, but the package is not on npm yet. `invoke<T>` and the message listeners trust the type you give them: it is not checked against the C# side.
+
 ### Notes
 
 - Android needs an Android System WebView that supports `WebMessageListener` (any reasonably recent version); otherwise the bridge is disabled and a warning is logged. On WebViews without document-start scripts the bridge is injected when the page finishes loading: page scripts should wait for `AdvancedWebView.ready` or the `advancedwebviewready` event.
