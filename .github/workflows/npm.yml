@@ -1,8 +1,8 @@
 name: npm
 
 # Publishes the TypeScript typings of the JavaScript bridge (typescript/) as @mafesoft/advancedwebview-types.
-# Runs when a tag such as v1.2.3 is pushed, like nuget.yml: the tag sets the package version.
-# A manual run (workflow_dispatch) only type-checks and packs, without publishing.
+# Runs only by hand (Actions > npm > Run workflow), never on a tag or a push.
+# By default it only type-checks and packs; tick "publish" and set the version (e.g. 1.5.1) to publish on npm.
 #
 # Authentication: npm Trusted Publishing (https://docs.npmjs.com/trusted-publishers), no long-lived token.
 # Requires on npmjs.com, in the settings of the package @mafesoft/advancedwebview-types, a trusted publisher with
@@ -10,9 +10,17 @@ name: npm
 # publishing) and environment "production".
 
 on:
-  push:
-    tags: [ 'v*.*.*' ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version, e.g. 1.5.1 (required to publish)'
+        required: false
+        type: string
+      publish:
+        description: 'Publish on npm'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -40,8 +48,10 @@ jobs:
         run: npx --yes -p typescript@5 tsc -p test
 
       - name: Set version
-        if: github.ref_type == 'tag'
-        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+        if: inputs.version != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: npm version "${VERSION#v}" --no-git-tag-version
 
       - name: Pack
         run: |
@@ -49,5 +59,12 @@ jobs:
           npm pack --dry-run
 
       - name: Publish on npm
-        if: github.ref_type == 'tag'
-        run: npm publish --access public
+        if: inputs.publish
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::Set the version to publish"
+            exit 1
+          fi
+          npm publish --access public
