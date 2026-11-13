@@ -17,6 +17,7 @@ No changes to the library code: same features as 1.5.0.
 
 - NuGet publishing uses Trusted Publishing instead of an API key ([#68](https://github.com/fmazzant/AdvancedWebView/issues/68)).
 - README badges and workflow names aligned with the other Mafesoft packages ([#69](https://github.com/fmazzant/AdvancedWebView/issues/69)).
+- README: Support section with a PayPal donation link.
 
 ## [1.5.0] - 2026-11-11
 
