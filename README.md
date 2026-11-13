@@ -10,6 +10,8 @@
 
 AdvancedWebView is a lightweight `WebView` for .NET MAUI (Android, iOS, Mac Catalyst and Windows). It extends the built-in MAUI `WebView`, so navigation events, cookies and user agent keep working, and it adds platform settings that the standard control does not expose.
 
+If AdvancedWebView is useful to you, consider [supporting the project](#support). ☕
+
 ## Why AdvancedWebView
 
 | Feature | MAUI `WebView` | AdvancedWebView |
