@@ -617,14 +617,10 @@ Scripts run on every page load; changes apply from the next load. `DocumentStart
 
 ### TypeScript
 
-Web developers get autocompletion and type checking for `window.AdvancedWebView` from [`typescript/advancedwebview.d.ts`](typescript/advancedwebview.d.ts), also published on npm as `@mafesoft/advancedwebview-types`:
+Web developers get autocompletion and type checking for `window.AdvancedWebView` from [`typescript/advancedwebview.d.ts`](typescript/advancedwebview.d.ts). Copy the file into the web project, inside a folder covered by `include` in `tsconfig.json`, or reference it from one file:
 
-```shell
-npm install --save-dev @mafesoft/advancedwebview-types
-```
-
-```json
-{ "compilerOptions": { "types": ["@mafesoft/advancedwebview-types"] } }
+```ts
+/// <reference path="./advancedwebview.d.ts" />
 ```
 
 ```ts
@@ -640,7 +636,7 @@ try {
 }
 ```
 
-The package only declares types (the app injects the bridge), so there is nothing to import at run time. Instead of the `types` setting you can add `/// <reference types="@mafesoft/advancedwebview-types" />` to one file, or copy the `.d.ts` file into the project. `invoke<T>` and the message listeners trust the type you give them: it is not checked against the C# side.
+The file only declares types (the app injects the bridge), so there is nothing to import at run time. The folder [`typescript/`](typescript) is also ready to be published on npm as `@mafesoft/advancedwebview-types`, but the package is not on npm yet. `invoke<T>` and the message listeners trust the type you give them: it is not checked against the C# side.
 
 ### Notes
 
