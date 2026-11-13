@@ -5,7 +5,20 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - Unreleased
+## [1.5.1] - 2026-11-14
+
+No changes to the library code: same features as 1.5.0.
+
+### Added
+
+- **TypeScript typings for the JS bridge:** `typescript/advancedwebview.d.ts` declares `window.AdvancedWebView` (`ready`, `postMessage`, `invoke<T>`, `addEventListener` / `removeEventListener`, `retry`, the error type and codes of a rejected `invoke`) and the `advancedwebviewready` event. The README explains how to use them in a web project ([#28](https://github.com/fmazzant/AdvancedWebView/issues/28)).
+
+### Changed
+
+- NuGet publishing uses Trusted Publishing instead of an API key ([#68](https://github.com/fmazzant/AdvancedWebView/issues/68)).
+- README badges and workflow names aligned with the other Mafesoft packages ([#69](https://github.com/fmazzant/AdvancedWebView/issues/69)).
+
+## [1.5.0] - 2026-11-11
 
 ### Added
 
@@ -131,7 +144,8 @@ First release for .NET 10.
 
 - Mixed content and file access are off by default on Android.
 
-[1.5.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.4.0.1...HEAD
+[1.5.1]: https://github.com/fmazzant/AdvancedWebView/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.4.0.1...v1.5.0
 [1.4.0.1]: https://github.com/fmazzant/AdvancedWebView/compare/v1.4.0...v1.4.0.1
 [1.4.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/fmazzant/AdvancedWebView/compare/v1.2.0...v1.3.0
