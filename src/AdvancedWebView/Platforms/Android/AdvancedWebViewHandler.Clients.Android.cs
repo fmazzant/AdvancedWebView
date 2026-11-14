@@ -302,6 +302,22 @@ namespace Mafesoft.Maui.Controls.Handlers
                 View?.SetTitle(title);
             }
 
+            // alert, confirm, prompt and beforeunload (#56): JavaScriptDialogRequested, or the platform dialog without a handler.
+            public override bool OnJsAlert(AWebView? view, string? url, string? message, JsResult? result) =>
+                ShowDialog(JavaScriptDialogKind.Alert, url, message, null, result) || base.OnJsAlert(view, url, message, result);
+
+            public override bool OnJsConfirm(AWebView? view, string? url, string? message, JsResult? result) =>
+                ShowDialog(JavaScriptDialogKind.Confirm, url, message, null, result) || base.OnJsConfirm(view, url, message, result);
+
+            public override bool OnJsPrompt(AWebView? view, string? url, string? message, string? defaultValue, JsPromptResult? result) =>
+                ShowDialog(JavaScriptDialogKind.Prompt, url, message, defaultValue, result) || base.OnJsPrompt(view, url, message, defaultValue, result);
+
+            public override bool OnJsBeforeUnload(AWebView? view, string? url, string? message, JsResult? result) =>
+                ShowDialog(JavaScriptDialogKind.BeforeUnload, url, message, null, result) || base.OnJsBeforeUnload(view, url, message, result);
+
+            bool ShowDialog(JavaScriptDialogKind kind, string? url, string? message, string? defaultValue, JsResult? result) =>
+                result is not null && handler.TryGetTarget(out var owner) && owner.ShowJavaScriptDialog(kind, url, message, defaultValue, result);
+
             // <input type="file">: FileChooserRequested, multiple files and capture; MAUI's picker for the simple case.
             public override bool OnShowFileChooser(AWebView? webView, IValueCallback? filePathCallback, FileChooserParams? fileChooserParams)
             {

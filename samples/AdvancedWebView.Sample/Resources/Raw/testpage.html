@@ -20,6 +20,9 @@
   <button id="btnAlert">alert()</button>
   <button id="btnConfirm">confirm()</button>
   <p id="confirmResult"></p>
+  <button id="btnPrompt">prompt()</button>
+  <p id="promptResult"></p>
+  <label><input type="checkbox" id="chkBeforeUnload"> Ask before leaving this page (beforeunload)</label>
   <p><a href="https://learn.microsoft.com/dotnet/maui/" target="_blank">Link with target="_blank"</a></p>
 
   <h3>File upload</h3>
@@ -97,6 +100,17 @@
     document.getElementById("btnConfirm").onclick = function () {
       document.getElementById("confirmResult").textContent = confirm("Continue?") ? "Confirmed" : "Cancelled";
     };
+    document.getElementById("btnPrompt").onclick = function () {
+      var name = prompt("Your name?", "Mario");
+      document.getElementById("promptResult").textContent = name === null ? "Cancelled" : "Hello, " + name;
+    };
+    // The "leave this page?" dialog needs a user gesture on the page before it is shown.
+    window.addEventListener("beforeunload", function (e) {
+      if (document.getElementById("chkBeforeUnload").checked) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    });
     document.getElementById("btnOpen").onclick = function () {
       window.open("https://dotnet.microsoft.com", "_blank");
     };

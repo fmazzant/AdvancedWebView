@@ -95,6 +95,10 @@
                     <Switch x:Name="AskInAppSwitch" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
+                    <Label Text="Dialogs in app" VerticalOptions="Center" />
+                    <Switch Toggled="OnAppDialogsToggled" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
                     <Label Text="Only microsoft.com inside" VerticalOptions="Center" />
                     <Switch Toggled="OnInternalHostsToggled" />
                 </HorizontalStackLayout>

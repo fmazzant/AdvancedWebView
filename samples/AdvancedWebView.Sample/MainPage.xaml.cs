@@ -390,6 +390,40 @@ public partial class MainPage : ContentPage
 		WebView.Source = new HtmlWebViewSource { Html = await reader.ReadToEndAsync() };
 	}
 
+	// Off: the platform dialogs. On: alert, confirm, prompt and "leave this page?" are shown with MAUI's own dialogs.
+	void OnAppDialogsToggled(object? sender, ToggledEventArgs e)
+	{
+		if (e.Value)
+			WebView.JavaScriptDialogRequested += OnJavaScriptDialogRequested;
+		else
+			WebView.JavaScriptDialogRequested -= OnJavaScriptDialogRequested;
+		Log(e.Value ? "JavaScript dialogs shown by the app" : "Platform JavaScript dialogs");
+	}
+
+	// The deferral keeps the page waiting until the dialog is closed; the result goes back to the page.
+	async void OnJavaScriptDialogRequested(object? sender, JavaScriptDialogRequestedEventArgs e)
+	{
+		using var deferral = e.GetDeferral();
+		var title = e.Origin?.Host ?? "Page";
+		switch (e.Kind)
+		{
+			case JavaScriptDialogKind.Alert:
+				await DisplayAlertAsync(title, e.Message, "OK");
+				break;
+			case JavaScriptDialogKind.Confirm:
+				e.Result = await DisplayAlertAsync(title, e.Message, "OK", "Cancel");
+				break;
+			case JavaScriptDialogKind.Prompt:
+				e.Text = await DisplayPromptAsync(title, e.Message, "OK", "Cancel", initialValue: e.DefaultText ?? "");
+				e.Result = e.Text is not null;
+				break;
+			case JavaScriptDialogKind.BeforeUnload:
+				e.Result = await DisplayAlertAsync(title, "Leave this page? Changes you made may not be saved.", "Leave", "Stay");
+				break;
+		}
+		Log($"{e.Kind} dialog: {(e.Kind == JavaScriptDialogKind.Prompt ? e.Text ?? "(cancelled)" : e.Result.ToString())}");
+	}
+
 	// app://localhost/... is served by OnWebResourceRequested from Resources/Raw/app.
 	void OnAppSchemeClicked(object? sender, EventArgs e) =>
 		WebView.Source = "app://localhost/index.html";
