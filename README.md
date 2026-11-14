@@ -135,6 +135,7 @@ WebView.ClearCache();
 | `IsTransparent` | `false` | ✔ | ✔ | The app shows through where the page has no background |
 | `TextSelectionEnabled` | `true` | ✔ | ✔ | Off: no text selection (form fields stay editable); iOS also loses the long-press menu |
 | `LinkPreviewEnabled` | `true` | | ✔ | Link preview on long press |
+| `ContextMenuEnabled` | `true` | ✔ | ✔ | Long-press / right-click menu. See [Context menu](#context-menu) |
 | `PreferredColorScheme` | `Auto` | | ✔ | `prefers-color-scheme`: `Auto`, `Light`, `Dark`. Android follows the app's theme |
 | `AlgorithmicDarkening` | `false` | ✔ | | Darkens pages without a dark theme while the app's theme is dark |
 
@@ -480,6 +481,39 @@ webView.JavaScriptDialogRequested += async (s, e) =>
 
 - **Windows:** WebView2's own dialogs are turned off while a handler is attached (`AreDefaultScriptDialogsEnabled`); WebView2 may apply the change from the next page load.
 
+### Context menu
+
+Turn the long-press / right-click menu off, or replace it with the app's own actions:
+
+```csharp
+webView.ContextMenuEnabled = false; // no menu at all
+
+webView.ContextMenuRequested += (s, e) =>
+{
+    // e.Kind: Page, Link, Image, Text, Media; e.LinkUrl, e.ImageUrl, e.SelectedText, e.Position, e.IsEditable
+    if (e.Kind == ContextMenuKind.Link)
+    {
+        e.Handled = true; // no platform menu
+        _ = ShowMyLinkMenuAsync(e.LinkUrl!);
+    }
+};
+```
+
+- `ContextMenuEnabled = false` removes the menu on every platform, and `ContextMenuRequested` is not raised. Text fields keep their own menu (paste) where the platform has one.
+- The event is raised on the main thread, before the platform menu. `Handled = true` stops the platform menu.
+- `Kind` is `Text` for selected text or a text field, then `Link` (also for an image inside a link), `Image`, `Media` and `Page`.
+
+| | Android | iOS, Mac Catalyst | Windows |
+|---|---|---|---|
+| What the menu is | The long press: text selection and its action mode (a WebView has no link or image menu) | The long-press menu (and right-click on Mac) of links and images, and the text callout | WebView2's right-click / long-touch menu |
+| Raised for | Every long press | Links and images | Every menu |
+| `LinkUrl` | ✔ (also `tel:`, `mailto:`, `geo:` for detected numbers, addresses and places) | ✔ | ✔ |
+| `ImageUrl` | ✔ (for an image inside a link, the link is not reported) | ✘ | ✔ |
+| `SelectedText`, `Position` | ✘ | ✘ | ✔ |
+
+- With the menu off, Android consumes the long press outside text fields: no text selection starts there. To keep selection and only drop the link menus, leave `ContextMenuEnabled` on and set `Handled`.
+- iOS, Mac Catalyst: with the menu off the page also gets `-webkit-touch-callout: none` and its `contextmenu` event is stopped (right click on Mac Catalyst). `TextSelectionEnabled = false` and `LinkPreviewEnabled` still work on their own.
+
 ### Platform delegates
 
 On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows, external links and error handling stop working.
@@ -743,7 +777,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `prompt()` and `beforeunload` (platform dialogs, or the app's own with the "Dialogs in app" switch), downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`, and an **app://** button that loads a page with its style sheet, script and image from the app package through `CustomSchemes` and `WebResourceRequested`, and sends a bridge message from it.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, a `ContextMenuEnabled` switch and an "App menu" switch that replaces the menu with an action sheet (`ContextMenuRequested`), `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `prompt()` and `beforeunload` (platform dialogs, or the app's own with the "Dialogs in app" switch), downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`, and an **app://** button that loads a page with its style sheet, script and image from the app package through `CustomSchemes` and `WebResourceRequested`, and sends a bridge message from it.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

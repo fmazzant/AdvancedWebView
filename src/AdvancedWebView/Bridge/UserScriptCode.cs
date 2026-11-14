@@ -33,21 +33,43 @@ namespace Mafesoft.Maui.Controls
         /// <summary>Id of the style element of <see cref="Display"/>.</summary>
         public const string DisplayStyleId = "__advancedwebview-display";
 
+        /// <summary>Property of <c>document</c>: whether the <c>contextmenu</c> listener of <see cref="Display"/> stops the menu.</summary>
+        public const string ContextMenuFlag = "__advancedwebviewNoContextMenu";
+
+        /// <summary>Property of <c>document</c>: the <c>contextmenu</c> listener of <see cref="Display"/> is already added.</summary>
+        public const string ContextMenuGuard = "__advancedwebviewContextMenuListener";
+
         /// <summary>
         /// A script for the display options: a style element (always the same one, so running it again replaces it)
         /// that turns off text selection, and the viewport's <c>user-scalable=no</c> to turn off pinch zoom.
         /// With text selection on and zoom allowed it empties the style element, so it can also undo a previous run.
+        /// With <paramref name="disableContextMenu"/> (#57) it also stops the long-press callout of WebKit and the page's
+        /// <c>contextmenu</c> event (right click on Mac Catalyst and Windows); the listener is added once per page and follows
+        /// the last run.
         /// </summary>
-        public static string Display(bool textSelection, bool disableZoom)
+        public static string Display(bool textSelection, bool disableZoom, bool disableContextMenu = false)
         {
-            var css = textSelection
-                ? string.Empty
-                : "* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }\n" +
-                  "input, textarea, select, [contenteditable], [contenteditable] * { -webkit-user-select: text !important; user-select: text !important; }";
+            var rules = new List<string>();
+            if (!textSelection)
+            {
+                rules.Add("* { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }");
+                rules.Add("input, textarea, select, [contenteditable], [contenteditable] * { -webkit-user-select: text !important; user-select: text !important; }");
+            }
+            else if (disableContextMenu)
+            {
+                rules.Add("* { -webkit-touch-callout: none !important; }");
+            }
+            var css = string.Join("\n", rules);
 
             return "(function () {\n" +
                    "  var css = " + BridgeProtocol.JsonString(css) + ";\n" +
                    "  var noZoom = " + (disableZoom ? "true" : "false") + ";\n" +
+                   "  var noMenu = " + (disableContextMenu ? "true" : "false") + ";\n" +
+                   "  document." + ContextMenuFlag + " = noMenu;\n" +
+                   "  if (noMenu && !document." + ContextMenuGuard + ") {\n" +
+                   "    document." + ContextMenuGuard + " = true;\n" +
+                   "    document.addEventListener(\"contextmenu\", function (e) { if (document." + ContextMenuFlag + ") { e.preventDefault(); } }, true);\n" +
+                   "  }\n" +
                    "  function style() {\n" +
                    "    var s = document.getElementById(\"" + DisplayStyleId + "\");\n" +
                    "    if (!s) { s = document.createElement(\"style\"); s.id = \"" + DisplayStyleId + "\"; (document.head || document.documentElement).appendChild(s); }\n" +
