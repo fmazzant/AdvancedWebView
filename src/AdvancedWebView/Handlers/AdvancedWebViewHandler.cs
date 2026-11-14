@@ -95,6 +95,11 @@ namespace Mafesoft.Maui.Controls.Handlers
 
         partial void UpdateWebResourceFiltersCore();
 
+        /// <summary>A JavaScriptDialogRequested handler was added or removed. Windows uses it to turn WebView2's own dialogs off.</summary>
+        internal void UpdateJavaScriptDialogs() => UpdateJavaScriptDialogsCore();
+
+        partial void UpdateJavaScriptDialogsCore();
+
         /// <summary>Re-applies <see cref="AdvancedWebView.UserScripts"/> and <see cref="AdvancedWebView.UserStyleSheets"/>.</summary>
         internal partial void UpdateUserScripts();
 

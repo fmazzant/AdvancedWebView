@@ -444,6 +444,42 @@ webView.WebResourceRequested += async (s, e) =>
 - **Android:** custom-scheme pages have an opaque origin in Chromium: `fetch()` and `XMLHttpRequest` to the custom scheme are blocked, while `<script>`, `<link>`, `<img>`, iframes and links work. For `fetch()` to app content, intercept an https URL instead (for example `https://appassets.androidplatform.net/`).
 - **Windows:** the schemes are registered in the WebView2 environment, and every WebView2 of the app shares one browser process with the same environment options: give **every** `AdvancedWebView` of the app the same `CustomSchemes`, otherwise the later views fail to start (a warning is logged). While a `WebResourceRequested` handler is attached, WebView2 reports every request to the app, which slows down loading a little: attach it only when needed.
 
+### JavaScript dialogs
+
+`alert()`, `confirm()`, `prompt()` and the "leave this page?" dialog of `beforeunload` can be shown with the app's own UI, or suppressed:
+
+```csharp
+webView.JavaScriptDialogRequested += async (s, e) =>
+{
+    // e.Kind: Alert, Confirm, Prompt, BeforeUnload; e.Message, e.DefaultText, e.Url, e.Origin
+    using var deferral = e.GetDeferral(); // before the first await: the page waits
+    switch (e.Kind)
+    {
+        case JavaScriptDialogKind.Alert:
+            await DisplayAlertAsync("Page", e.Message, "OK");
+            break;
+        case JavaScriptDialogKind.Prompt:
+            e.Text = await DisplayPromptAsync("Page", e.Message, initialValue: e.DefaultText ?? "");
+            e.Result = e.Text is not null;
+            break;
+        default: // Confirm, BeforeUnload
+            e.Result = await DisplayAlertAsync("Page", e.Message, "OK", "Cancel");
+            break;
+    }
+};
+```
+
+- Without a handler, the platform dialogs stay. With a handler, they are not shown: a handler that does nothing dismisses every dialog (alert closed, `confirm` returns `false`, `prompt` returns `null`, the page is not left).
+- `e.Result = true` is OK: `confirm` returns `true`, `prompt` returns `e.Text` (which starts as `e.DefaultText`), `beforeunload` leaves the page. An alert ignores it.
+- The event is raised on the main thread. A handler that throws cancels the dialog.
+
+| | Android | iOS, Mac Catalyst | Windows |
+|---|---|---|---|
+| `alert`, `confirm`, `prompt` | ✔ | ✔ | ✔ |
+| `beforeunload` | ✔ | ✘ (WebKit does not let apps show it) | ✔ |
+
+- **Windows:** WebView2's own dialogs are turned off while a handler is attached (`AreDefaultScriptDialogsEnabled`); WebView2 may apply the change from the next page load.
+
 ### Platform delegates
 
 On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows, external links and error handling stop working.
@@ -707,7 +743,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`, and an **app://** button that loads a page with its style sheet, script and image from the app package through `CustomSchemes` and `WebResourceRequested`, and sends a bridge message from it.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `prompt()` and `beforeunload` (platform dialogs, or the app's own with the "Dialogs in app" switch), downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`, and an **app://** button that loads a page with its style sheet, script and image from the app package through `CustomSchemes` and `WebResourceRequested`, and sends a bridge message from it.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell
