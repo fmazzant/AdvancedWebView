@@ -11,7 +11,9 @@ namespace Mafesoft.Maui.Controls
         /// (subdomains only) or <c>"*"</c> (any site; not recommended).
         /// </summary>
         /// <remarks>
-        /// Local content (an <see cref="HtmlWebViewSource"/> or files packaged with the app) can always use the bridge.
+        /// Local content (an <see cref="HtmlWebViewSource"/>, files packaged with the app, or pages of a scheme in
+        /// <c>AdvancedWebView.CustomSchemes</c>) can always use the bridge. Rules for custom schemes, such as
+        /// <c>"app://localhost"</c>, are accepted too.
         /// With an empty list, which is the default, remote pages cannot use it: their messages are dropped
         /// and their <c>invoke</c> calls are rejected with <c>OriginNotAllowed</c>.
         /// </remarks>
@@ -41,6 +43,16 @@ namespace Mafesoft.Maui.Controls
         /// </summary>
         public bool IncludeExceptionDetails { get; set; }
 
-        internal bool IsOriginAllowed(Uri? origin) => OriginRule.IsLocal(origin) || allowedOrigins.Matches(origin);
+        /// <summary>
+        /// The custom URL schemes the app serves itself (<c>AdvancedWebView.CustomSchemes</c>): their pages are app
+        /// content, like local HTML, and can always use the bridge.
+        /// </summary>
+        internal Func<IEnumerable<string>>? LocalSchemes { get; set; }
+
+        internal bool IsOriginAllowed(Uri? origin) =>
+            OriginRule.IsLocal(origin) || IsLocalScheme(origin) || allowedOrigins.Matches(origin);
+
+        bool IsLocalScheme(Uri? origin) =>
+            origin is { IsAbsoluteUri: true } && LocalSchemes?.Invoke().Contains(origin.Scheme, StringComparer.OrdinalIgnoreCase) == true;
     }
 }

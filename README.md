@@ -135,6 +135,7 @@ WebView.ClearCache();
 | `IsTransparent` | `false` | ✔ | ✔ | The app shows through where the page has no background |
 | `TextSelectionEnabled` | `true` | ✔ | ✔ | Off: no text selection (form fields stay editable); iOS also loses the long-press menu |
 | `LinkPreviewEnabled` | `true` | | ✔ | Link preview on long press |
+| `ContextMenuEnabled` | `true` | ✔ | ✔ | Long-press / right-click menu. See [Context menu](#context-menu) |
 | `PreferredColorScheme` | `Auto` | | ✔ | `prefers-color-scheme`: `Auto`, `Light`, `Dark`. Android follows the app's theme |
 | `AlgorithmicDarkening` | `false` | ✔ | | Darkens pages without a dark theme while the app's theme is dark |
 
@@ -399,6 +400,120 @@ webView.HttpAuthenticationRequested += async (s, e) =>
 - What each platform reports: `Scheme` is `Unknown` on Android, which reports host and realm only. `IsProxy` is reported on iOS and Mac Catalyst only. `PreviousFailureCount` comes from iOS; on Android and Windows the control counts the attempts for the host and realm until a page loads.
 - Basic sends the password base64-encoded, not encrypted: use it only over https.
 
+### Web requests and custom schemes
+
+The app can answer the page's requests itself: serve its own files from a custom scheme such as `app://`, block requests, or replace them.
+
+```csharp
+webView.CustomSchemes.Add("app"); // before the control is shown
+webView.Source = "app://localhost/index.html";
+
+webView.WebResourceRequested += async (s, e) =>
+{
+    // e.Url, e.Method, e.Headers, e.ResourceType, e.IsCustomScheme
+    if (e.Url.Contains("/ads/"))
+    {
+        e.Response = new WebResourceResponse(403); // block it
+        return;
+    }
+
+    if (!e.IsCustomScheme)
+        return; // the web view loads it
+
+    using var deferral = e.GetDeferral(); // before the first await
+    var path = "app/" + new Uri(e.Url).AbsolutePath.TrimStart('/'); // Resources/Raw/app/...
+    e.Response = new WebResourceResponse(
+        await FileSystem.OpenAppPackageFileAsync(path), WebResourceResponse.GetContentType(path));
+};
+```
+
+- Leave `e.Response` null to let the web view load the request. A custom-scheme request without a response fails with 404.
+- `new WebResourceResponse(stream, contentType, statusCode)` serves content; `new WebResourceResponse(404)` answers without content; `Headers` adds response headers. `WebResourceResponse.GetContentType(path)` gives the MIME type of common file extensions.
+- Use a host in custom-scheme URLs (`app://localhost/index.html`): relative links then work, and the page's origin is `app://localhost`.
+- Pages of a custom scheme are app content: they can use the [JavaScript bridge](#javascript-bridge) without `Bridge.AllowedOrigins`, like local HTML, and `MessageReceived` reports `app://localhost` as their origin. Rules such as `app://localhost` are accepted in `AllowedOrigins` too.
+- The page waits for the answer: keep the handler fast, and take a deferral for asynchronous work.
+
+| | Android | iOS, Mac Catalyst | Windows |
+|---|---|---|---|
+| Custom schemes | ✔ | ✔ | ✔ |
+| http and https requests | ✔ | ✘ (WebKit does not allow it) | ✔ |
+| Thread of the event | **Background thread**: do not touch the UI | Main thread | Main thread |
+| `ResourceType` | `Document` for the top-level page, `Unknown` otherwise | `Unknown` | Every type |
+| `SetRequestHeader` (add headers to a request the web view sends) | ✘ | ✘ | ✔ |
+| When `CustomSchemes` is read | Any time | When the native view is created | When the native view is created |
+
+- **Android:** custom-scheme pages have an opaque origin in Chromium: `fetch()` and `XMLHttpRequest` to the custom scheme are blocked, while `<script>`, `<link>`, `<img>`, iframes and links work. For `fetch()` to app content, intercept an https URL instead (for example `https://appassets.androidplatform.net/`).
+- **Windows:** the schemes are registered in the WebView2 environment, and every WebView2 of the app shares one browser process with the same environment options: give **every** `AdvancedWebView` of the app the same `CustomSchemes`, otherwise the later views fail to start (a warning is logged). While a `WebResourceRequested` handler is attached, WebView2 reports every request to the app, which slows down loading a little: attach it only when needed.
+
+### JavaScript dialogs
+
+`alert()`, `confirm()`, `prompt()` and the "leave this page?" dialog of `beforeunload` can be shown with the app's own UI, or suppressed:
+
+```csharp
+webView.JavaScriptDialogRequested += async (s, e) =>
+{
+    // e.Kind: Alert, Confirm, Prompt, BeforeUnload; e.Message, e.DefaultText, e.Url, e.Origin
+    using var deferral = e.GetDeferral(); // before the first await: the page waits
+    switch (e.Kind)
+    {
+        case JavaScriptDialogKind.Alert:
+            await DisplayAlertAsync("Page", e.Message, "OK");
+            break;
+        case JavaScriptDialogKind.Prompt:
+            e.Text = await DisplayPromptAsync("Page", e.Message, initialValue: e.DefaultText ?? "");
+            e.Result = e.Text is not null;
+            break;
+        default: // Confirm, BeforeUnload
+            e.Result = await DisplayAlertAsync("Page", e.Message, "OK", "Cancel");
+            break;
+    }
+};
+```
+
+- Without a handler, the platform dialogs stay. With a handler, they are not shown: a handler that does nothing dismisses every dialog (alert closed, `confirm` returns `false`, `prompt` returns `null`, the page is not left).
+- `e.Result = true` is OK: `confirm` returns `true`, `prompt` returns `e.Text` (which starts as `e.DefaultText`), `beforeunload` leaves the page. An alert ignores it.
+- The event is raised on the main thread. A handler that throws cancels the dialog.
+
+| | Android | iOS, Mac Catalyst | Windows |
+|---|---|---|---|
+| `alert`, `confirm`, `prompt` | ✔ | ✔ | ✔ |
+| `beforeunload` | ✔ | ✘ (WebKit does not let apps show it) | ✔ |
+
+- **Windows:** WebView2's own dialogs are turned off while a handler is attached (`AreDefaultScriptDialogsEnabled`); WebView2 may apply the change from the next page load.
+
+### Context menu
+
+Turn the long-press / right-click menu off, or replace it with the app's own actions:
+
+```csharp
+webView.ContextMenuEnabled = false; // no menu at all
+
+webView.ContextMenuRequested += (s, e) =>
+{
+    // e.Kind: Page, Link, Image, Text, Media; e.LinkUrl, e.ImageUrl, e.SelectedText, e.Position, e.IsEditable
+    if (e.Kind == ContextMenuKind.Link)
+    {
+        e.Handled = true; // no platform menu
+        _ = ShowMyLinkMenuAsync(e.LinkUrl!);
+    }
+};
+```
+
+- `ContextMenuEnabled = false` removes the menu on every platform, and `ContextMenuRequested` is not raised. Text fields keep their own menu (paste) where the platform has one.
+- The event is raised on the main thread, before the platform menu. `Handled = true` stops the platform menu.
+- `Kind` is `Text` for selected text or a text field, then `Link` (also for an image inside a link), `Image`, `Media` and `Page`.
+
+| | Android | iOS, Mac Catalyst | Windows |
+|---|---|---|---|
+| What the menu is | The long press: text selection and its action mode (a WebView has no link or image menu) | The long-press menu (and right-click on Mac) of links and images, and the text callout | WebView2's right-click / long-touch menu |
+| Raised for | Every long press | Links and images | Every menu |
+| `LinkUrl` | ✔ (also `tel:`, `mailto:`, `geo:` for detected numbers, addresses and places) | ✔ | ✔ |
+| `ImageUrl` | ✔ (for an image inside a link, the link is not reported) | ✘ | ✔ |
+| `SelectedText`, `Position` | ✘ | ✘ | ✔ |
+
+- With the menu off, Android consumes the long press outside text fields: no text selection starts there. To keep selection and only drop the link menus, leave `ContextMenuEnabled` on and set `Handled`.
+- iOS, Mac Catalyst: with the menu off the page also gets `-webkit-touch-callout: none` and its `contextmenu` event is stopped (right click on Mac Catalyst). `TextSelectionEnabled = false` and `LinkPreviewEnabled` still work on their own.
+
 ### Platform delegates
 
 On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `MauiWebChromeClient`; on iOS, subclasses of `MauiWebViewNavigationDelegate` and `MauiWebViewUIDelegate`. If your app replaces them, page state, new windows, external links and error handling stop working.
@@ -523,7 +638,7 @@ The page and the app can exchange messages and call each other, with local HTML 
 
 ### Allowed origins (read this first)
 
-Local content (an `HtmlWebViewSource` or files packaged with the app) can always use the bridge. **Remote sites cannot, until you list them:**
+Local content (an `HtmlWebViewSource`, files packaged with the app, or pages of a [custom scheme](#web-requests-and-custom-schemes)) can always use the bridge. **Remote sites cannot, until you list them:**
 
 ```csharp
 webView.Bridge.AllowedOrigins = ["https://shop.example.com", "https://*.example.com"];
@@ -662,7 +777,7 @@ webView.IsInspectable = true;
 
 [`samples/AdvancedWebView.Sample`](samples/AdvancedWebView.Sample) has two tabs:
 
-- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`.
+- **Browser**: page title, URL and progress bar (`Title`, `CurrentUrl`, `Progress`, `IsLoading`), pull to refresh (`RefreshView`), switches for the properties (including `IsInspectable`, `FullscreenEnabled` and the display options), cache mode and new-window pickers, a downloads picker, switches for `InternalHosts` and `ErrorPageHtml`, a `ContextMenuEnabled` switch and an "App menu" switch that replaces the menu with an action sheet (`ContextMenuRequested`), `ClearCache()`, `LoadUrl` with headers and `PostUrlAsync` (against httpbin.org, which echoes the request), the cookie API (set, read, copy to `HttpClient`) and `ClearWebsiteDataAsync`, screenshots of the page on screen and of the whole page (`CaptureAsync`), PDF export and printing (`ExportPdfAsync`, `PrintAsync`), URL blocking in `Navigating`, `EvaluateJavaScriptAsync`, and a local test page for `alert()`, `confirm()`, `prompt()` and `beforeunload` (platform dialogs, or the app's own with the "Dialogs in app" switch), downloads (PDF, ZIP, `data:` and `blob:`), file upload (single, multiple, PDF only, camera), permissions (`getUserMedia`, geolocation; picker and "Ask in app" switch), fullscreen (video and `requestFullscreen`), a `target="_blank"` link, `window.open()`, load failures (HTTP 404 and 500, unknown host, expired certificate, timeout), external links (`tel:`, `mailto:`, `geo:`, `intent://`), `document.title` changes and `history.pushState`, and an **app://** button that loads a page with its style sheet, script and image from the app package through `CustomSchemes` and `WebResourceRequested`, and sends a bridge message from it.
 - **Bridge**: messages both ways, handlers with results and error codes, `InvokeJavaScriptAsync` (plain, Promise, error), a user style sheet, and a user script on example.com that shows the bridge blocked or allowed by `AllowedOrigins`.
 
 ```shell

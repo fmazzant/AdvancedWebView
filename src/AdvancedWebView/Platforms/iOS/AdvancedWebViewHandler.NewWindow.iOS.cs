@@ -98,6 +98,44 @@ namespace Mafesoft.Maui.Controls.Handlers
                     decisionHandler(WKPermissionDecision.Prompt);
             }
 
+            // Long-press menu of links and images (#57): nil shows no menu. Otherwise MAUI's base (its own context menu, if any).
+            public override void SetContextMenuConfiguration(WKWebView webView, WKContextMenuElementInfo elementInfo, Action<UIKit.UIContextMenuConfiguration> completionHandler)
+            {
+                if (handler.TryGetTarget(out var owner) && owner.SuppressContextMenu(elementInfo))
+                    completionHandler(null!);
+                else
+                    base.SetContextMenuConfiguration(webView, elementInfo, completionHandler);
+            }
+
+            // alert, confirm and prompt (#56): JavaScriptDialogRequested, or MAUI's alert controller without a handler.
+            public override void RunJavaScriptAlertPanel(WKWebView webView, string message, WKFrameInfo frame, Action completionHandler)
+            {
+                if (!handler.TryGetTarget(out var owner) ||
+                    !owner.ShowJavaScriptDialog(JavaScriptDialogKind.Alert, message, null, frame, _ => completionHandler()))
+                    base.RunJavaScriptAlertPanel(webView, message, frame, completionHandler);
+            }
+
+            public override void RunJavaScriptConfirmPanel(WKWebView webView, string message, WKFrameInfo frame, Action<bool> completionHandler)
+            {
+                if (!handler.TryGetTarget(out var owner) ||
+                    !owner.ShowJavaScriptDialog(JavaScriptDialogKind.Confirm, message, null, frame, a => completionHandler(a.Accept)))
+                    base.RunJavaScriptConfirmPanel(webView, message, frame, completionHandler);
+            }
+
+            // Obsolete in the binding only because its completion handler is not annotated as nullable: null (Cancel) still
+            // reaches WebKit as nil, as in MAUI's own override.
+#pragma warning disable CS0672, CS0618 // Member overrides obsolete member / obsolete member
+            public override void RunJavaScriptTextInputPanel(WKWebView webView, string prompt, string? defaultText, WKFrameInfo frame, Action<string> completionHandler)
+#pragma warning restore CS0672, CS0618
+            {
+                // null tells the page that the prompt was cancelled.
+                if (!handler.TryGetTarget(out var owner) ||
+                    !owner.ShowJavaScriptDialog(JavaScriptDialogKind.Prompt, prompt, defaultText, frame, a => completionHandler(a.Accept ? a.Text ?? string.Empty : null!)))
+#pragma warning disable CS0618
+                    base.RunJavaScriptTextInputPanel(webView, prompt, defaultText, frame, completionHandler);
+#pragma warning restore CS0618
+            }
+
             // window.open: returning null tells WebKit that no window was created.
             public override WKWebView? CreateWebView(WKWebView webView, WKWebViewConfiguration configuration, WKNavigationAction navigationAction, WKWindowFeatures windowFeatures)
             {

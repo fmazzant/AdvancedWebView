@@ -24,6 +24,9 @@ public partial class MainPage : ContentPage
 		PermissionPicker.ItemsSource = Enum.GetNames<PermissionDecision>();
 		PermissionPicker.SelectedIndex = (int)WebView.PermissionRequestBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+
+		// Before the control is shown: iOS, Mac Catalyst and Windows register the schemes when the native view is created.
+		WebView.CustomSchemes.Add("app");
 	}
 
 	void OnDownloadBehaviorChanged(object? sender, EventArgs e)
@@ -386,6 +389,105 @@ public partial class MainPage : ContentPage
 		using var reader = new StreamReader(stream);
 		WebView.Source = new HtmlWebViewSource { Html = await reader.ReadToEndAsync() };
 	}
+
+	// Long press / right click. With "App menu" on, the platform menu is replaced by the app's own actions.
+	void OnContextMenuRequested(object? sender, ContextMenuRequestedEventArgs e)
+	{
+		Log($"Context menu: {e.Kind} {e.LinkUrl ?? e.ImageUrl ?? e.SelectedText ?? ""}");
+		if (!AppMenuSwitch.IsToggled)
+			return;
+
+		e.Handled = true;
+		_ = ShowAppMenuAsync(e.LinkUrl ?? e.ImageUrl, e.SelectedText);
+	}
+
+	async Task ShowAppMenuAsync(string? url, string? text)
+	{
+		var actions = new List<string>();
+		if (url is not null)
+			actions.AddRange(["Open in browser", "Copy link"]);
+		if (!string.IsNullOrEmpty(text))
+			actions.Add("Copy text");
+		actions.Add("Reload");
+
+		switch (await DisplayActionSheetAsync("App menu", "Cancel", null, [.. actions]))
+		{
+			case "Open in browser":
+				await Launcher.Default.OpenAsync(url!);
+				break;
+			case "Copy link":
+				await Clipboard.Default.SetTextAsync(url);
+				break;
+			case "Copy text":
+				await Clipboard.Default.SetTextAsync(text);
+				break;
+			case "Reload":
+				WebView.Reload();
+				break;
+		}
+	}
+
+	// Off: the platform dialogs. On: alert, confirm, prompt and "leave this page?" are shown with MAUI's own dialogs.
+	void OnAppDialogsToggled(object? sender, ToggledEventArgs e)
+	{
+		if (e.Value)
+			WebView.JavaScriptDialogRequested += OnJavaScriptDialogRequested;
+		else
+			WebView.JavaScriptDialogRequested -= OnJavaScriptDialogRequested;
+		Log(e.Value ? "JavaScript dialogs shown by the app" : "Platform JavaScript dialogs");
+	}
+
+	// The deferral keeps the page waiting until the dialog is closed; the result goes back to the page.
+	async void OnJavaScriptDialogRequested(object? sender, JavaScriptDialogRequestedEventArgs e)
+	{
+		using var deferral = e.GetDeferral();
+		var title = e.Origin?.Host ?? "Page";
+		switch (e.Kind)
+		{
+			case JavaScriptDialogKind.Alert:
+				await DisplayAlertAsync(title, e.Message, "OK");
+				break;
+			case JavaScriptDialogKind.Confirm:
+				e.Result = await DisplayAlertAsync(title, e.Message, "OK", "Cancel");
+				break;
+			case JavaScriptDialogKind.Prompt:
+				e.Text = await DisplayPromptAsync(title, e.Message, "OK", "Cancel", initialValue: e.DefaultText ?? "");
+				e.Result = e.Text is not null;
+				break;
+			case JavaScriptDialogKind.BeforeUnload:
+				e.Result = await DisplayAlertAsync(title, "Leave this page? Changes you made may not be saved.", "Leave", "Stay");
+				break;
+		}
+		Log($"{e.Kind} dialog: {(e.Kind == JavaScriptDialogKind.Prompt ? e.Text ?? "(cancelled)" : e.Result.ToString())}");
+	}
+
+	// app://localhost/... is served by OnWebResourceRequested from Resources/Raw/app.
+	void OnAppSchemeClicked(object? sender, EventArgs e) =>
+		WebView.Source = "app://localhost/index.html";
+
+	// Custom scheme requests (and, on Android and Windows, every http/https request). On Android this runs on a
+	// background thread: no UI here. The deferral keeps the request waiting while the file is opened.
+	async void OnWebResourceRequested(object? sender, WebResourceRequestEventArgs e)
+	{
+		if (!e.IsCustomScheme)
+			return; // let the web view load http and https itself
+
+		using var deferral = e.GetDeferral();
+		var path = "app/" + Uri.UnescapeDataString(new Uri(e.Url).AbsolutePath.TrimStart('/'));
+		try
+		{
+			var content = await FileSystem.OpenAppPackageFileAsync(path);
+			e.Response = new WebResourceResponse(content, WebResourceResponse.GetContentType(path));
+		}
+		catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+		{
+			e.Response = new WebResourceResponse(404);
+		}
+	}
+
+	// Bridge messages: the app:// page can use the bridge without Bridge.AllowedOrigins.
+	void OnMessageReceived(object? sender, WebMessageReceivedEventArgs e) =>
+		MainThread.BeginInvokeOnMainThread(() => Log($"Bridge message from {e.Origin?.ToString() ?? "local content"}: {e.Message}"));
 
 	async void OnRunJavaScriptClicked(object? sender, EventArgs e)
 	{

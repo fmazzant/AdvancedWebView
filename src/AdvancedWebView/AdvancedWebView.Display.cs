@@ -112,8 +112,8 @@ namespace Mafesoft.Maui.Controls
             set => SetValue(LinkPreviewEnabledProperty, value);
         }
 
-        /// <summary>The script that applies <see cref="TextSelectionEnabled"/> and, on iOS, <see cref="ZoomEnabled"/>; empty when nothing to do.</summary>
+        /// <summary>The script that applies <see cref="TextSelectionEnabled"/>, <see cref="ContextMenuEnabled"/> and, on iOS, <see cref="ZoomEnabled"/>.</summary>
         internal string DisplayScript() =>
-            UserScriptCode.Display(TextSelectionEnabled, disableZoom: OperatingSystem.IsIOS() && !ZoomEnabled);
+            UserScriptCode.Display(TextSelectionEnabled, disableZoom: OperatingSystem.IsIOS() && !ZoomEnabled, disableContextMenu: !ContextMenuEnabled);
     }
 }

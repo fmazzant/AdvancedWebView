@@ -87,7 +87,9 @@ namespace Mafesoft.Maui.Controls.Handlers
         /// </summary>
         void OnDocumentRequested(CoreWebView2 sender, CoreWebView2WebResourceRequestedEventArgs args)
         {
-            if (RequestHeaders.GetPendingHeaders(args.Request.Uri) is not { } headers)
+            // The WebResourceRequested filters (#55) also bring the page's resources here.
+            if (args.ResourceContext != CoreWebView2WebResourceContext.Document ||
+                RequestHeaders.GetPendingHeaders(args.Request.Uri) is not { } headers)
                 return;
 
             foreach (var (name, value) in headers)
@@ -202,7 +204,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             try
             {
                 if (core is null)
-                    await PlatformView.EnsureCoreWebView2Async();
+                    await EnsureCoreAsync(); // with the custom schemes, when set
                 if (core is not { } target)
                     return;
 

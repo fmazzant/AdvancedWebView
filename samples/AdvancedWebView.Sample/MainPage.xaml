@@ -95,6 +95,18 @@
                     <Switch x:Name="AskInAppSwitch" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
+                    <Label Text="Context menu" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding ContextMenuEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="App menu" VerticalOptions="Center" />
+                    <Switch x:Name="AppMenuSwitch" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Dialogs in app" VerticalOptions="Center" />
+                    <Switch Toggled="OnAppDialogsToggled" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
                     <Label Text="Only microsoft.com inside" VerticalOptions="Center" />
                     <Switch Toggled="OnInternalHostsToggled" />
                 </HorizontalStackLayout>
@@ -104,6 +116,7 @@
                 </HorizontalStackLayout>
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
+                <Button Text="app://" Clicked="OnAppSchemeClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
                 <Button Text="Headers" Clicked="OnLoadWithHeadersClicked" />
                 <Button Text="POST" Clicked="OnPostClicked" />
@@ -134,7 +147,10 @@
             FileChooserRequested="OnFileChooserRequested"
             PermissionRequested="OnPermissionRequested"
             DownloadRequested="OnDownloadRequested"
-            ServerCertificateError="OnServerCertificateError" />
+            ServerCertificateError="OnServerCertificateError"
+            WebResourceRequested="OnWebResourceRequested"
+            ContextMenuRequested="OnContextMenuRequested"
+            MessageReceived="OnMessageReceived" />
         </RefreshView>
 
         <!-- Event log: last three navigation events -->

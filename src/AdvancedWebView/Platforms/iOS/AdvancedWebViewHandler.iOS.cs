@@ -29,6 +29,9 @@ namespace Mafesoft.Maui.Controls.Handlers
                 // Videos also use the native player's fullscreen, which this setting does not control.
                 if (OperatingSystem.IsIOSVersionAtLeast(16, 4))
                     config.Preferences.ElementFullscreenEnabled = view.FullscreenEnabled;
+
+                // Custom schemes (app://): WebKit only accepts scheme handlers before the view is created.
+                SetUpCustomSchemes(config, view);
             }
 
             SetUpBridge(config);

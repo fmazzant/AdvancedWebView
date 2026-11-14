@@ -26,6 +26,7 @@ namespace Mafesoft.Maui.Controls.Handlers
                 [nameof(AdvancedWebView.PreferredColorScheme)] = MapPreferredColorScheme,
                 [nameof(AdvancedWebView.AlgorithmicDarkening)] = MapAlgorithmicDarkening,
                 [nameof(AdvancedWebView.TextSelectionEnabled)] = MapDisplayScript,
+                [nameof(AdvancedWebView.ContextMenuEnabled)] = MapContextMenuEnabled,
                 [nameof(AdvancedWebView.LinkPreviewEnabled)] = MapLinkPreviewEnabled,
 #if ANDROID
                 // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
@@ -34,6 +35,9 @@ namespace Mafesoft.Maui.Controls.Handlers
 #elif IOS || MACCATALYST
                 // Same key as the MAUI mapper: our subclass of MauiWebViewUIDelegate replaces MAUI's.
                 [nameof(WebKit.WKUIDelegate)] = MapAdvancedUIDelegate,
+#elif WINDOWS
+                // With CustomSchemes, the page is loaded once CoreWebView2 exists with them registered (#55).
+                [nameof(IWebView.Source)] = MapSource,
 #endif
             };
 
@@ -70,6 +74,15 @@ namespace Mafesoft.Maui.Controls.Handlers
             handler.ExecuteScript(view.DisplayScript());
         }
 
+        // ContextMenuEnabled (#57): the display script (WebKit callout, contextmenu event) and the platform setting.
+        static void MapContextMenuEnabled(AdvancedWebViewHandler handler, AdvancedWebView view)
+        {
+            MapDisplayScript(handler, view);
+            handler.UpdateContextMenuCore();
+        }
+
+        partial void UpdateContextMenuCore();
+
         /// <summary>Captures the page (CaptureAsync). Must be called on the main thread.</summary>
         internal partial Task<WebViewScreenshot> CapturePageAsync(WebCaptureArea area);
 
@@ -86,6 +99,16 @@ namespace Mafesoft.Maui.Controls.Handlers
         internal void OnPageLoaded() => OnPageLoadedCore();
 
         partial void OnPageLoadedCore();
+
+        /// <summary>A WebResourceRequested handler was added or removed. Windows uses it to ask WebView2 for every request.</summary>
+        internal void UpdateWebResourceFilters() => UpdateWebResourceFiltersCore();
+
+        partial void UpdateWebResourceFiltersCore();
+
+        /// <summary>A JavaScriptDialogRequested handler was added or removed. Windows uses it to turn WebView2's own dialogs off.</summary>
+        internal void UpdateJavaScriptDialogs() => UpdateJavaScriptDialogsCore();
+
+        partial void UpdateJavaScriptDialogsCore();
 
         /// <summary>Re-applies <see cref="AdvancedWebView.UserScripts"/> and <see cref="AdvancedWebView.UserStyleSheets"/>.</summary>
         internal partial void UpdateUserScripts();
