@@ -17,6 +17,7 @@ namespace Mafesoft.Maui.Controls
             Navigated += (_, _) => (Handler as AdvancedWebViewHandler)?.OnPageLoaded();
             UserScripts.CollectionChanged += (_, _) => (Handler as AdvancedWebViewHandler)?.UpdateUserScripts();
             UserStyleSheets.CollectionChanged += (_, _) => (Handler as AdvancedWebViewHandler)?.UpdateUserScripts();
+            Bridge.LocalSchemes = GetCustomSchemes; // pages of a custom scheme are app content
         }
 
         /// <summary>Settings of the JavaScript bridge: allowed origins, iframes, timeout.</summary>

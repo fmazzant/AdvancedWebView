@@ -34,6 +34,9 @@ namespace Mafesoft.Maui.Controls.Handlers
 #elif IOS || MACCATALYST
                 // Same key as the MAUI mapper: our subclass of MauiWebViewUIDelegate replaces MAUI's.
                 [nameof(WebKit.WKUIDelegate)] = MapAdvancedUIDelegate,
+#elif WINDOWS
+                // With CustomSchemes, the page is loaded once CoreWebView2 exists with them registered (#55).
+                [nameof(IWebView.Source)] = MapSource,
 #endif
             };
 
@@ -86,6 +89,11 @@ namespace Mafesoft.Maui.Controls.Handlers
         internal void OnPageLoaded() => OnPageLoadedCore();
 
         partial void OnPageLoadedCore();
+
+        /// <summary>A WebResourceRequested handler was added or removed. Windows uses it to ask WebView2 for every request.</summary>
+        internal void UpdateWebResourceFilters() => UpdateWebResourceFiltersCore();
+
+        partial void UpdateWebResourceFiltersCore();
 
         /// <summary>Re-applies <see cref="AdvancedWebView.UserScripts"/> and <see cref="AdvancedWebView.UserStyleSheets"/>.</summary>
         internal partial void UpdateUserScripts();

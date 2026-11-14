@@ -32,7 +32,9 @@ namespace Mafesoft.Maui.Controls.Handlers
         protected override WWebView2 CreatePlatformView()
         {
             SetBrowserArguments();
-            return base.CreatePlatformView();
+            var platformView = base.CreatePlatformView();
+            StartCustomSchemes(platformView);
+            return platformView;
         }
 
         // Autoplay is a browser argument, read when the first WebView2 of the app creates its browser process.
@@ -92,6 +94,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             SetUpFullscreen(created);
             SetUpProcessTermination(created);
             SetUpHttpAuthentication(created);
+            SetUpWebResources(created);
 
             foreach (var key in CoreSettings)
                 UpdateValue(key);
@@ -109,6 +112,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownFullscreen(current);
             TearDownProcessTermination(current);
             TearDownHttpAuthentication(current);
+            TearDownWebResources(current);
             WebViewCookieManager.Unregister(current);
             core = null;
         }
@@ -171,10 +175,12 @@ namespace Mafesoft.Maui.Controls.Handlers
             MauiContext?.Services.GetService<ILogger<AdvancedWebViewHandler>>()?.LogWarning("{Message}", message);
 
         /// <summary>
-        /// The origin of a document URL; null for local content (MAUI's app host, about:, data:, file:), as on the
+        /// The origin of a document URL (custom schemes included); null for local content (MAUI's app host, about:, data:, file:), as on the
         /// other platforms.
         /// </summary>
-        static Uri? ToOrigin(string? url)
+        Uri? ToOrigin(string? url) => ToCustomSchemeOrigin(url) ?? ToWebOrigin(url);
+
+        static Uri? ToWebOrigin(string? url)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
                 uri.Scheme is not ("http" or "https") ||

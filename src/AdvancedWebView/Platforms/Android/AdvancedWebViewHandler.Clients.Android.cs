@@ -214,7 +214,16 @@ namespace Mafesoft.Maui.Controls.Handlers
                 }
             }
 
-            public override void OnReceivedHttpError(AWebView? view, IWebResourceRequest? request, WebResourceResponse? errorResponse)
+            // Custom schemes and WebResourceRequested (#55). Called on a background thread of the web view.
+            public override Android.Webkit.WebResourceResponse? ShouldInterceptRequest(AWebView? view, IWebResourceRequest? request)
+            {
+                if (request is not null && handler.TryGetTarget(out var owner) && owner.InterceptRequest(request) is { } response)
+                    return response;
+
+                return base.ShouldInterceptRequest(view, request);
+            }
+
+            public override void OnReceivedHttpError(AWebView? view, IWebResourceRequest? request, Android.Webkit.WebResourceResponse? errorResponse)
             {
                 base.OnReceivedHttpError(view, request, errorResponse);
                 if (request?.IsForMainFrame == true && errorResponse?.StatusCode >= 400 && handler.TryGetTarget(out var owner))
