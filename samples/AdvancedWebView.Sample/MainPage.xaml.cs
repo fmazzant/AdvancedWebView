@@ -24,6 +24,9 @@ public partial class MainPage : ContentPage
 		PermissionPicker.ItemsSource = Enum.GetNames<PermissionDecision>();
 		PermissionPicker.SelectedIndex = (int)WebView.PermissionRequestBehavior;
 		UrlEntry.Text = (WebView.Source as UrlWebViewSource)?.Url;
+
+		// Before the control is shown: iOS, Mac Catalyst and Windows register the schemes when the native view is created.
+		WebView.CustomSchemes.Add("app");
 	}
 
 	void OnDownloadBehaviorChanged(object? sender, EventArgs e)
@@ -386,6 +389,34 @@ public partial class MainPage : ContentPage
 		using var reader = new StreamReader(stream);
 		WebView.Source = new HtmlWebViewSource { Html = await reader.ReadToEndAsync() };
 	}
+
+	// app://localhost/... is served by OnWebResourceRequested from Resources/Raw/app.
+	void OnAppSchemeClicked(object? sender, EventArgs e) =>
+		WebView.Source = "app://localhost/index.html";
+
+	// Custom scheme requests (and, on Android and Windows, every http/https request). On Android this runs on a
+	// background thread: no UI here. The deferral keeps the request waiting while the file is opened.
+	async void OnWebResourceRequested(object? sender, WebResourceRequestEventArgs e)
+	{
+		if (!e.IsCustomScheme)
+			return; // let the web view load http and https itself
+
+		using var deferral = e.GetDeferral();
+		var path = "app/" + Uri.UnescapeDataString(new Uri(e.Url).AbsolutePath.TrimStart('/'));
+		try
+		{
+			var content = await FileSystem.OpenAppPackageFileAsync(path);
+			e.Response = new WebResourceResponse(content, WebResourceResponse.GetContentType(path));
+		}
+		catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+		{
+			e.Response = new WebResourceResponse(404);
+		}
+	}
+
+	// Bridge messages: the app:// page can use the bridge without Bridge.AllowedOrigins.
+	void OnMessageReceived(object? sender, WebMessageReceivedEventArgs e) =>
+		MainThread.BeginInvokeOnMainThread(() => Log($"Bridge message from {e.Origin?.ToString() ?? "local content"}: {e.Message}"));
 
 	async void OnRunJavaScriptClicked(object? sender, EventArgs e)
 	{

@@ -29,6 +29,10 @@ public partial class BridgePage : ContentPage
 	{
 		InitializeComponent();
 
+		// Windows: every WebView2 of the app shares one browser process, started with the custom schemes of the first
+		// one. The Browser tab registers app://, so this view registers it too.
+		WebView.CustomSchemes.Add("app");
+
 		// Handlers the page calls with AdvancedWebView.invoke(...)
 		WebView.RegisterHandler("getTime", _ => Task.FromResult(DateTime.Now.ToString("T")));
 		WebView.RegisterHandler<DivideRequest, double>("divide", (req, _) =>

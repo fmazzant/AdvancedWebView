@@ -104,6 +104,7 @@
                 </HorizontalStackLayout>
                 <Button Text="Clear cache" Clicked="OnClearCacheClicked" />
                 <Button Text="Test page" Clicked="OnTestPageClicked" />
+                <Button Text="app://" Clicked="OnAppSchemeClicked" />
                 <Button Text="Run JS" Clicked="OnRunJavaScriptClicked" />
                 <Button Text="Headers" Clicked="OnLoadWithHeadersClicked" />
                 <Button Text="POST" Clicked="OnPostClicked" />
@@ -134,7 +135,9 @@
             FileChooserRequested="OnFileChooserRequested"
             PermissionRequested="OnPermissionRequested"
             DownloadRequested="OnDownloadRequested"
-            ServerCertificateError="OnServerCertificateError" />
+            ServerCertificateError="OnServerCertificateError"
+            WebResourceRequested="OnWebResourceRequested"
+            MessageReceived="OnMessageReceived" />
         </RefreshView>
 
         <!-- Event log: last three navigation events -->
