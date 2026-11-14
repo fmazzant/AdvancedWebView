@@ -5,6 +5,37 @@ All notable changes to `Mafesoft.Maui.AdvancedWebView` are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-11-14
+
+### Added
+
+- `CustomSchemes` and the `WebResourceRequested` event: serve pages and files from the app with a custom scheme
+  (for example `app://localhost/index.html`), or block, replace or let through the requests of the web view. The
+  handler sets `e.Response` (stream + content type, or a status code such as 403/404), leaves it null to let the web
+  view load the request, or takes a deferral (`e.GetDeferral()`) for asynchronous work. Android and Windows intercept
+  http/https too; iOS / Mac Catalyst only custom schemes. Pages of a custom scheme can use the bridge, and origin rules
+  such as `app://localhost` work in `AllowedOrigins`. ([#55](https://github.com/fmazzant/AdvancedWebView/issues/55))
+- `JavaScriptDialogRequested` event: show `alert`, `confirm`, `prompt` and `beforeunload` with the app's own UI and
+  return the result to the page (`Result`, `Text`, `GetDeferral()`). Without a handler the platform dialogs are
+  shown as before. `beforeunload` is supported on Android and Windows only.
+  ([#56](https://github.com/fmazzant/AdvancedWebView/issues/56))
+- `ContextMenuEnabled` (default `true`) and the `ContextMenuRequested` event: turn the context menu off or replace it
+  with the app's own menu, with the kind of element (`Page`, `Link`, `Image`, `Text`, `Media`), the link and image
+  URLs, the selected text and the position. Image URL: Android and Windows; selected text and position: Windows only.
+  ([#57](https://github.com/fmazzant/AdvancedWebView/issues/57))
+- Sample app: **app://** page, "Dialogs in app", "Context menu" and "App menu" switches.
+
+### Changed
+
+- CI and CodeQL run on the `release/*` and `release-candidate/*` branches too, not only on `main`.
+
+### Notes
+
+- Windows: every `AdvancedWebView` of an app must use the same `CustomSchemes` (WebView2 shares one browser process
+  per set of environment options).
+- Android: a custom-scheme page cannot `fetch()` its own scheme; `<script>`, `<link>`, `<img>` and links work.
+- Android: with `ContextMenuEnabled = false` a long press no longer starts text selection, except in text fields.
+
 ## [1.5.1] - 2026-11-14
 
 No changes to the library code: same features as 1.5.0.
