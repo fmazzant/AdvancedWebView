@@ -19,6 +19,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             nameof(AdvancedWebView.ZoomEnabled),
             nameof(AdvancedWebView.TextZoom),
             nameof(AdvancedWebView.PreferredColorScheme),
+            nameof(AdvancedWebView.ContextMenuEnabled),
         ];
 
         static bool browserArgumentsSet;
@@ -96,6 +97,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             SetUpHttpAuthentication(created);
             SetUpWebResources(created);
             SetUpDialogs(created);
+            SetUpContextMenu(created);
 
             foreach (var key in CoreSettings)
                 UpdateValue(key);
@@ -115,6 +117,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownHttpAuthentication(current);
             TearDownWebResources(current);
             TearDownDialogs(current);
+            TearDownContextMenu(current);
             WebViewCookieManager.Unregister(current);
             core = null;
         }

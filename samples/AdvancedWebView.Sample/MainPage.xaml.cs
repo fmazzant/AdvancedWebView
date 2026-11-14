@@ -390,6 +390,43 @@ public partial class MainPage : ContentPage
 		WebView.Source = new HtmlWebViewSource { Html = await reader.ReadToEndAsync() };
 	}
 
+	// Long press / right click. With "App menu" on, the platform menu is replaced by the app's own actions.
+	void OnContextMenuRequested(object? sender, ContextMenuRequestedEventArgs e)
+	{
+		Log($"Context menu: {e.Kind} {e.LinkUrl ?? e.ImageUrl ?? e.SelectedText ?? ""}");
+		if (!AppMenuSwitch.IsToggled)
+			return;
+
+		e.Handled = true;
+		_ = ShowAppMenuAsync(e.LinkUrl ?? e.ImageUrl, e.SelectedText);
+	}
+
+	async Task ShowAppMenuAsync(string? url, string? text)
+	{
+		var actions = new List<string>();
+		if (url is not null)
+			actions.AddRange(["Open in browser", "Copy link"]);
+		if (!string.IsNullOrEmpty(text))
+			actions.Add("Copy text");
+		actions.Add("Reload");
+
+		switch (await DisplayActionSheetAsync("App menu", "Cancel", null, [.. actions]))
+		{
+			case "Open in browser":
+				await Launcher.Default.OpenAsync(url!);
+				break;
+			case "Copy link":
+				await Clipboard.Default.SetTextAsync(url);
+				break;
+			case "Copy text":
+				await Clipboard.Default.SetTextAsync(text);
+				break;
+			case "Reload":
+				WebView.Reload();
+				break;
+		}
+	}
+
 	// Off: the platform dialogs. On: alert, confirm, prompt and "leave this page?" are shown with MAUI's own dialogs.
 	void OnAppDialogsToggled(object? sender, ToggledEventArgs e)
 	{

@@ -98,6 +98,15 @@ namespace Mafesoft.Maui.Controls.Handlers
                     decisionHandler(WKPermissionDecision.Prompt);
             }
 
+            // Long-press menu of links and images (#57): nil shows no menu. Otherwise MAUI's base (its own context menu, if any).
+            public override void SetContextMenuConfiguration(WKWebView webView, WKContextMenuElementInfo elementInfo, Action<UIKit.UIContextMenuConfiguration> completionHandler)
+            {
+                if (handler.TryGetTarget(out var owner) && owner.SuppressContextMenu(elementInfo))
+                    completionHandler(null!);
+                else
+                    base.SetContextMenuConfiguration(webView, elementInfo, completionHandler);
+            }
+
             // alert, confirm and prompt (#56): JavaScriptDialogRequested, or MAUI's alert controller without a handler.
             public override void RunJavaScriptAlertPanel(WKWebView webView, string message, WKFrameInfo frame, Action completionHandler)
             {

@@ -95,6 +95,14 @@
                     <Switch x:Name="AskInAppSwitch" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
+                    <Label Text="Context menu" VerticalOptions="Center" />
+                    <Switch IsToggled="{Binding ContextMenuEnabled, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="App menu" VerticalOptions="Center" />
+                    <Switch x:Name="AppMenuSwitch" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
                     <Label Text="Dialogs in app" VerticalOptions="Center" />
                     <Switch Toggled="OnAppDialogsToggled" />
                 </HorizontalStackLayout>
@@ -141,6 +149,7 @@
             DownloadRequested="OnDownloadRequested"
             ServerCertificateError="OnServerCertificateError"
             WebResourceRequested="OnWebResourceRequested"
+            ContextMenuRequested="OnContextMenuRequested"
             MessageReceived="OnMessageReceived" />
         </RefreshView>
 

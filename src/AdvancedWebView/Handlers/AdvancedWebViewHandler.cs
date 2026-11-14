@@ -26,6 +26,7 @@ namespace Mafesoft.Maui.Controls.Handlers
                 [nameof(AdvancedWebView.PreferredColorScheme)] = MapPreferredColorScheme,
                 [nameof(AdvancedWebView.AlgorithmicDarkening)] = MapAlgorithmicDarkening,
                 [nameof(AdvancedWebView.TextSelectionEnabled)] = MapDisplayScript,
+                [nameof(AdvancedWebView.ContextMenuEnabled)] = MapContextMenuEnabled,
                 [nameof(AdvancedWebView.LinkPreviewEnabled)] = MapLinkPreviewEnabled,
 #if ANDROID
                 // Same keys as the MAUI mapper: our subclasses of MauiWebViewClient/MauiWebChromeClient replace MAUI's.
@@ -72,6 +73,15 @@ namespace Mafesoft.Maui.Controls.Handlers
             handler.UpdateUserScripts();
             handler.ExecuteScript(view.DisplayScript());
         }
+
+        // ContextMenuEnabled (#57): the display script (WebKit callout, contextmenu event) and the platform setting.
+        static void MapContextMenuEnabled(AdvancedWebViewHandler handler, AdvancedWebView view)
+        {
+            MapDisplayScript(handler, view);
+            handler.UpdateContextMenuCore();
+        }
+
+        partial void UpdateContextMenuCore();
 
         /// <summary>Captures the page (CaptureAsync). Must be called on the main thread.</summary>
         internal partial Task<WebViewScreenshot> CapturePageAsync(WebCaptureArea area);
