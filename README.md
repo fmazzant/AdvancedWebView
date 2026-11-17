@@ -27,6 +27,7 @@ If AdvancedWebView is useful to you, consider [supporting the project](#support)
 | Load failures | No error details | ✔ Typed errors (no internet, timeout, SSL, HTTP status) and a custom `ErrorPageHtml`. See [Load failures and error page](#load-failures-and-error-page) |
 | Web process crashes | Android ends the app, iOS shows a blank page | ✔ `WebProcessTerminated`; the view recovers and reloads the page. See [Web process crashes](#web-process-crashes) |
 | HTTP authentication (Basic, Digest, NTLM) | Cancelled on Android and iOS | ✔ `HttpAuthenticationRequested` with the app's credentials. See [HTTP authentication](#http-authentication) |
+| Client certificates (mutual TLS) | Cancelled on Android and iOS | ✔ `ClientCertificateRequested` with the app's certificate. See [Client certificates](#client-certificates) |
 | Page state | ✘ | ✔ Bindable `Progress`, `IsLoading`, `Title`, `CurrentUrl`. See [Page state](#page-state) |
 | Platform settings (zoom, text zoom, transparency, mixed content, cache mode, dark mode…) | ✘ | ✔ See [Properties](#properties) |
 | Remote debugging | ✘ | ✔ `IsInspectable`. See [Debugging the page](#debugging-the-page) |
@@ -399,6 +400,26 @@ webView.HttpAuthenticationRequested += async (s, e) =>
 - The platform keeps accepted credentials for the session, so the event is usually raised once per site.
 - What each platform reports: `Scheme` is `Unknown` on Android, which reports host and realm only. `IsProxy` is reported on iOS and Mac Catalyst only. `PreviousFailureCount` comes from iOS; on Android and Windows the control counts the attempts for the host and realm until a page loads.
 - Basic sends the password base64-encoded, not encrypted: use it only over https.
+
+### Client certificates
+
+Servers that require a client certificate (mutual TLS, common in enterprise and banking apps) raise `ClientCertificateRequested`. Answer with an `X509Certificate2` that has its private key, or leave `Certificate` null to continue without one:
+
+```csharp
+webView.ClientCertificateRequested += async (s, e) =>
+{
+    // e.Host, e.Port, e.AcceptableIssuers (the CAs the server accepts)
+    using var deferral = e.GetDeferral(); // before the first await
+    var pfx = await LoadPfxBytesAsync(); // for example from SecureStorage
+    e.Certificate = X509CertificateLoader.LoadPkcs12(pfx, password, X509KeyStorageFlags.Exportable);
+};
+```
+
+- Without a handler, the platform's default applies: Android and iOS continue without a certificate, WebView2 on Windows lets the user pick one from the Windows certificate store.
+- On Android, iOS and Mac Catalyst the private key is handed to the platform: load the certificate with `X509KeyStorageFlags.Exportable`. Add intermediate certificates to `e.IntermediateCertificates` when the server does not know the issuer of the client certificate.
+- WebView2 on Windows can only send a certificate of the Windows certificate store that the server accepts. `e.AvailableCertificates` lists them (without private keys): pick one of them, for example by subject. Any other certificate is ignored with a warning in the log.
+- The platforms remember the answer for the host and port while the app runs, so the event is usually raised once per server.
+- To try it, open `https://client.badssl.com/` and answer with the [badssl.com client certificate](https://badssl.com/download/) (password `badssl.com`).
 
 ### Web requests and custom schemes
 
