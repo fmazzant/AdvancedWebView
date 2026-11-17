@@ -25,6 +25,14 @@
                    FontSize="12" LineBreakMode="MiddleTruncation" />
             <ProgressBar Progress="{Binding Progress, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}"
                          IsVisible="{Binding IsLoading, Source={x:Reference WebView}, x:DataType=awv:AdvancedWebView}" />
+            <!-- Find in page -->
+            <Grid ColumnSpacing="4" ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                <Entry Grid.Column="0" x:Name="FindEntry" Placeholder="Find in page" ReturnType="Search" Completed="OnFindCompleted" />
+                <Label Grid.Column="1" x:Name="FindLabel" VerticalOptions="Center" FontSize="12" />
+                <Button Grid.Column="2" Text="&#x2191;" WidthRequest="44" Clicked="OnFindPreviousClicked" />
+                <Button Grid.Column="3" Text="&#x2193;" WidthRequest="44" Clicked="OnFindNextClicked" />
+                <Button Grid.Column="4" Text="X" WidthRequest="44" Clicked="OnFindClearClicked" />
+            </Grid>
         </VerticalStackLayout>
 
         <!-- Settings. On iOS, JavaScript and Popups apply only when the native view is created. -->
@@ -150,6 +158,7 @@
             ServerCertificateError="OnServerCertificateError"
             WebResourceRequested="OnWebResourceRequested"
             ContextMenuRequested="OnContextMenuRequested"
+            FindResultsUpdated="OnFindResultsUpdated"
             MessageReceived="OnMessageReceived" />
         </RefreshView>
 

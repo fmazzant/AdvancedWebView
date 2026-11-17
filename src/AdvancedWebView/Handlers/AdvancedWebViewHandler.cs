@@ -92,6 +92,15 @@ namespace Mafesoft.Maui.Controls.Handlers
         /// <summary>Opens the system print dialog (PrintAsync). Must be called on the main thread.</summary>
         internal partial Task PrintAsync(string jobName);
 
+        /// <summary>Starts a search in the page (FindAsync) and returns the match count. Must be called on the main thread.</summary>
+        internal partial Task<int> FindCoreAsync(string text, bool caseSensitive);
+
+        /// <summary>Moves to the next or previous match (FindNext, FindPrevious). Must be called on the main thread.</summary>
+        internal partial void FindNextCore(bool forward);
+
+        /// <summary>Ends the search (ClearFind). Must be called on the main thread.</summary>
+        internal partial void ClearFindCore();
+
         /// <summary>Loads a request on the platform view (see <see cref="Load"/>). Must be called on the main thread.</summary>
         internal partial void LoadRequest(WebRequest request);
 

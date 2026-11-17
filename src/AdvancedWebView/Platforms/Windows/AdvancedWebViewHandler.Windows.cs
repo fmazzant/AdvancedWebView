@@ -108,6 +108,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             if (core is not { } current)
                 return;
 
+            TearDownFind();
             TearDownBridge(current);
             TearDownNavigation(current);
             TearDownDownloads(current);
