@@ -98,6 +98,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             SetUpWebResources(created);
             SetUpDialogs(created);
             SetUpContextMenu(created);
+            SetUpClientCertificate(created);
 
             foreach (var key in CoreSettings)
                 UpdateValue(key);
@@ -118,6 +119,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownWebResources(current);
             TearDownDialogs(current);
             TearDownContextMenu(current);
+            TearDownClientCertificate(current);
             WebViewCookieManager.Unregister(current);
             core = null;
         }

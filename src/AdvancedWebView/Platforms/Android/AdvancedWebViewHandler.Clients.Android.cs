@@ -266,6 +266,15 @@ namespace Mafesoft.Maui.Controls.Handlers
                     base.OnReceivedHttpAuthRequest(view, authHandler, host, realm);
             }
 
+            // Client certificates (#58). Without a ClientCertificateRequested handler, the base cancels it as before.
+            public override void OnReceivedClientCertRequest(AWebView? view, ClientCertRequest? request)
+            {
+                if (request is not null && handler.TryGetTarget(out var owner) && owner.Advanced is { HasClientCertificateHandler: true } advanced)
+                    owner.AnswerClientCertificate(advanced, request);
+                else
+                    base.OnReceivedClientCertRequest(view, request);
+            }
+
             // Also called for history.pushState / replaceState, which do not start a page load.
             public override void DoUpdateVisitedHistory(AWebView? view, string? url, bool isReload)
             {
