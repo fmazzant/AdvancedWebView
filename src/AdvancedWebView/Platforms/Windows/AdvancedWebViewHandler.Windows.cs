@@ -108,6 +108,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             if (core is not { } current)
                 return;
 
+            TearDownFind();
             TearDownBridge(current);
             TearDownNavigation(current);
             TearDownDownloads(current);
@@ -118,7 +119,6 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownWebResources(current);
             TearDownDialogs(current);
             TearDownContextMenu(current);
-            TearDownFind();
             WebViewCookieManager.Unregister(current);
             core = null;
         }
