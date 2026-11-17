@@ -118,6 +118,7 @@ namespace Mafesoft.Maui.Controls.Handlers
             TearDownWebResources(current);
             TearDownDialogs(current);
             TearDownContextMenu(current);
+            TearDownFind();
             WebViewCookieManager.Unregister(current);
             core = null;
         }
