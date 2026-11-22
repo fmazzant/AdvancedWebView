@@ -87,11 +87,20 @@ namespace Mafesoft.Maui.Controls.Handlers
             }
 
             // Invalid server certificates and HTTP authentication (AdvancedWebViewHandler.HttpAuthentication.iOS.cs).
-            // Not implemented by MAUI. Other challenges (client certificates) keep the default handling.
+            // Client certificates: AdvancedWebViewHandler.ClientCertificate.iOS.cs. Not implemented by MAUI.
             [Export("webView:didReceiveAuthenticationChallenge:completionHandler:")]
             public void DidReceiveAuthenticationChallenge(WKWebView webView, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential?> completionHandler)
             {
                 var space = challenge.ProtectionSpace;
+                if (IsClientCertificate(space.AuthenticationMethod))
+                {
+                    if (Owner is { Advanced: { HasClientCertificateHandler: true } advanced } owner)
+                        owner.AnswerClientCertificate(advanced, challenge, completionHandler);
+                    else
+                        completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
+                    return;
+                }
+
                 if (IsHttpAuthentication(space.AuthenticationMethod))
                 {
                     if (Owner is { Advanced: { HasHttpAuthenticationHandler: true } advanced } owner)
