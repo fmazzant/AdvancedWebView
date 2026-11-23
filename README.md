@@ -34,6 +34,7 @@ If AdvancedWebView is useful to you, consider [supporting the project](#support)
 | Custom headers and POST | ✘ | ✔ `LoadUrl(url, headers)`, `PostUrlAsync`. See [Headers and POST](#headers-and-post) |
 | Cookies and website data | `Cookies` container only | ✔ `CookieManager`, `ClearWebsiteDataAsync`. See [Cookies and website data](#cookies-and-website-data) |
 | Screenshots, PDF, printing | ✘ | ✔ `CaptureAsync`, `ExportPdfAsync`, `PrintAsync`. See [Screenshots](#screenshots) and [PDF and printing](#pdf-and-printing) |
+| Find in page | ✘ | ✔ `FindAsync` with match count, `FindNext`, `FindPrevious`. See [Find in page](#find-in-page) |
 
 ## Requirements
 
@@ -550,8 +551,28 @@ On Android, AdvancedWebView sets subclasses of MAUI's `MauiWebViewClient` and `M
 | `CaptureAsync(area)` | Screenshot of the part on screen or of the whole page. See [Screenshots](#screenshots). |
 | `ExportPdfAsync(options)` | The page as a PDF, split into pages. See [PDF and printing](#pdf-and-printing). |
 | `PrintAsync(jobName)` | Opens the system print dialog. |
+| `FindAsync(text, caseSensitive)` | Searches the page and highlights the matches; `FindNext`, `FindPrevious`, `ClearFind`. See [Find in page](#find-in-page). |
 
 `CookieManager` (property) reads and changes the web view's cookies. See [Cookies and website data](#cookies-and-website-data).
+
+### Find in page
+
+Search text in the page, highlight the matches and move between them:
+
+```csharp
+int matches = await webView.FindAsync("invoice", caseSensitive: false); // scrolls to the first match
+webView.FindNext();     // wraps around to the first match
+webView.FindPrevious(); // wraps around to the last match
+webView.ClearFind();    // removes the highlights
+
+webView.FindResultsUpdated += (s, e) => Status = e.Count == 0 ? "0/0" : $"{e.ActiveIndex + 1}/{e.Count}";
+```
+
+- `ActiveIndex` starts at 0 and is -1 when there is no match. `FindResultsUpdated` is raised on the main thread after each call.
+- Android uses the WebView's own find (`FindAllAsync`), which is always case-insensitive: `caseSensitive` is ignored.
+- iOS and Mac Catalyst: WKWebView's find reports no count, so the search runs in the page. It covers the main frame, not iframes, and a match cannot span two elements (for example half in bold). Every match is highlighted from iOS 17.2 (CSS Custom Highlight API); earlier, the active match is shown as the selection.
+- Windows uses the WebView2 Find API, without its find bar. It needs a recent WebView2 Runtime: with an older one `FindAsync` returns 0 and logs a warning.
+- The sample app has a find bar under the address bar.
 
 ### Screenshots
 

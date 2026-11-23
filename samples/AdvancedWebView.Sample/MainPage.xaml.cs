@@ -390,6 +390,26 @@ public partial class MainPage : ContentPage
 		WebView.Source = new HtmlWebViewSource { Html = await reader.ReadToEndAsync() };
 	}
 
+	// Find in page: search on Enter, move with the arrows; FindResultsUpdated keeps the "2/5" label current.
+	async void OnFindCompleted(object? sender, EventArgs e)
+	{
+		var count = await WebView.FindAsync(FindEntry.Text ?? string.Empty);
+		Log($"Find \"{FindEntry.Text}\": {count} matches");
+	}
+
+	void OnFindNextClicked(object? sender, EventArgs e) => WebView.FindNext();
+
+	void OnFindPreviousClicked(object? sender, EventArgs e) => WebView.FindPrevious();
+
+	void OnFindClearClicked(object? sender, EventArgs e)
+	{
+		FindEntry.Text = string.Empty;
+		WebView.ClearFind();
+	}
+
+	void OnFindResultsUpdated(object? sender, FindResultsUpdatedEventArgs e) =>
+		FindLabel.Text = e.Count == 0 ? (string.IsNullOrEmpty(FindEntry.Text) ? string.Empty : "0/0") : $"{e.ActiveIndex + 1}/{e.Count}";
+
 	// Long press / right click. With "App menu" on, the platform menu is replaced by the app's own actions.
 	void OnContextMenuRequested(object? sender, ContextMenuRequestedEventArgs e)
 	{
